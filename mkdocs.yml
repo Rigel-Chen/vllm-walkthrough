@@ -1,7 +1,6 @@
 site_name: KV Cache 源码深度分析
 site_description: 深入剖析 vLLM 框架中 KV Cache 的调度与管理机制
-# TODO: 替换为你的 GitHub 仓库地址
-repo_url: https://github.com/你的用户名/你的仓库名
+repo_url: https://github.com/Rigel-Chen/vllm-walkthrough.git
 edit_uri: edit/main/docs/
 
 theme:
