@@ -1,4 +1,10 @@
-// tooltip 文本映射表（key 为节点文本的归一化形式：去空格、去换行、小写）
+// ============================================================
+//  Mermaid 节点悬浮提示（事件委托版，不依赖渲染时机）
+//  核心思路：事件绑在 document 上，利用事件冒泡
+//  不管 mermaid 什么时候渲染 SVG，鼠标移上去都能触发
+// ============================================================
+
+// tooltip 文本映射表（key 为节点文本归一化形式）
 const tooltipMap = {
   'llmengine.generate': '对外的总入口，接收用户请求并驱动生成流程。',
   'enginecore.add_request': '将请求封装并注册到引擎核心，准备调度。',
@@ -17,14 +23,26 @@ const tooltipMap = {
   'attentionbackend操作物理kvcache': '根据 slot_mapping 将当前 token 的 KV 值写入物理缓存。',
 };
 
-// 归一化文本：去空格、去换行、转小写，用于模糊匹配
+// 归一化文本：去空格、去换行、转小写
 function normalizeLabel(text) {
   return text.replace(/[\s\n\r]+/g, '').toLowerCase().trim();
 }
 
-// 提取节点文本（兼容多行 tspan 和各种节点形状）
-function getNodeText(node) {
-  const textEl = node.querySelector('text');
+// 从事件目标向上找到最近的 g.node 元素
+function findNodeEl(target) {
+  let el = target;
+  while (el && el !== document) {
+    if (el.classList && el.classList.contains('node')) {
+      return el;
+    }
+    el = el.parentNode;
+  }
+  return null;
+}
+
+// 提取节点文本
+function getNodeText(nodeEl) {
+  const textEl = nodeEl.querySelector('text');
   if (!textEl) return '';
   const tspans = textEl.querySelectorAll('tspan');
   if (tspans.length > 0) {
@@ -33,99 +51,77 @@ function getNodeText(node) {
   return textEl.textContent || '';
 }
 
-// 绑定 tooltip 事件
-function attachTooltips(svg) {
-  const nodes = svg.querySelectorAll('g.node');
-  if (nodes.length === 0) return false;
-
-  // 创建 tooltip 元素（全局复用）
+// 创建并获取 tooltip 元素（单例）
+function getTooltip() {
   let tooltip = document.querySelector('.custom-tooltip');
   if (!tooltip) {
     tooltip = document.createElement('div');
     tooltip.className = 'custom-tooltip';
     document.body.appendChild(tooltip);
   }
-
-  let boundCount = 0;
-
-  // 为每个节点绑定事件
-  nodes.forEach(node => {
-    const rawText = getNodeText(node);
-    const key = normalizeLabel(rawText);
-    const tipText = tooltipMap[key];
-
-    if (!tipText) return; // 未在映射表中的节点跳过
-
-    // 使用 mouseover/mouseout，兼容性比 mouseenter/mouseleave 更好（SVG 场景）
-    node.addEventListener('mouseover', (e) => {
-      tooltip.textContent = tipText;
-      tooltip.classList.add('visible');
-    });
-
-    node.addEventListener('mousemove', (e) => {
-      // 使用 clientX/clientY + fixed 定位，避免页面滚动偏移问题
-      tooltip.style.left = (e.clientX + 15) + 'px';
-      tooltip.style.top = (e.clientY + 15) + 'px';
-    });
-
-    node.addEventListener('mouseout', () => {
-      tooltip.classList.remove('visible');
-    });
-
-    boundCount++;
-  });
-
-  return boundCount > 0;
+  return tooltip;
 }
 
-// 尝试初始化：先直接检查，再用 observer 兜底
-function tryInit() {
-  const mermaidDivs = document.querySelectorAll('div.mermaid');
-  let success = false;
+// 当前激活的节点（防止重复查找）
+let currentNode = null;
 
-  mermaidDivs.forEach(div => {
-    const svg = div.querySelector('svg');
-    if (svg) {
-      if (attachTooltips(svg)) {
-        success = true;
+function initEventDelegation() {
+  const tooltip = getTooltip();
+
+  // 鼠标移入/移动
+  document.addEventListener('mousemove', (e) => {
+    const nodeEl = findNodeEl(e.target);
+
+    if (nodeEl) {
+      // 进入了新节点
+      if (nodeEl !== currentNode) {
+        currentNode = nodeEl;
+        const rawText = getNodeText(nodeEl);
+        const key = normalizeLabel(rawText);
+        const tipText = tooltipMap[key];
+
+        if (tipText) {
+          tooltip.textContent = tipText;
+          tooltip.classList.add('visible');
+        } else {
+          tooltip.classList.remove('visible');
+        }
+      }
+      // 更新位置
+      if (tooltip.classList.contains('visible')) {
+        tooltip.style.left = (e.clientX + 15) + 'px';
+        tooltip.style.top = (e.clientY + 15) + 'px';
+      }
+    } else {
+      // 离开了节点
+      if (currentNode) {
+        currentNode = null;
+        tooltip.classList.remove('visible');
       }
     }
   });
 
-  return success;
+  // 鼠标快速移出 SVG 区域时兜底隐藏
+  document.addEventListener('mouseleave', () => {
+    currentNode = null;
+    tooltip.classList.remove('visible');
+  });
 }
 
-function initMermaidTooltips() {
-  // 先立即尝试一次（页面加载完 mermaid 可能已经渲染好了）
-  if (tryInit()) return;
-
-  // 如果没找到，用 MutationObserver 继续等待渲染
-  let observer;
-  const timeoutId = setTimeout(() => {
-    if (observer) observer.disconnect();
-  }, 10000); // 10秒超时兜底
-
-  observer = new MutationObserver((mutations, obs) => {
-    if (tryInit()) {
-      obs.disconnect();
-      clearTimeout(timeoutId);
+// 启动
+if (typeof document$ !== 'undefined' && document$.subscribe) {
+  // MkDocs Material：每次页面内容刷新都确保事件已绑定（只绑一次）
+  let bound = false;
+  document$.subscribe(function() {
+    if (!bound) {
+      initEventDelegation();
+      bound = true;
     }
   });
-
-  observer.observe(document.body, { childList: true, subtree: true });
-}
-
-// 兼容 MkDocs Material 的 document$，同时降级处理
-if (typeof document$ !== 'undefined' && document$.subscribe) {
-  document$.subscribe(function() {
-    initMermaidTooltips();
-  });
 } else {
-  // 降级：等 DOM 就绪后执行
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMermaidTooltips);
+    document.addEventListener('DOMContentLoaded', initEventDelegation);
   } else {
-    // 已经加载完，延迟一点等 mermaid 渲染
-    setTimeout(initMermaidTooltips, 500);
+    initEventDelegation();
   }
 }
