@@ -1,0 +1,20 @@
+/* 自定义 tooltip 容器 */
+.custom-tooltip {
+  position: absolute;
+  max-width: 280px;
+  padding: 10px 14px;
+  background: var(--md-primary-fg-color);
+  color: var(--md-primary-bg);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.custom-tooltip.visible {
+  opacity: 1;
+}

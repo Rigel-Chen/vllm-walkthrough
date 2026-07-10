@@ -26,7 +26,11 @@ theme:
       toggle:
         icon: material/brightness-4
         name: 切换至浅色模式
+extra_css:
+  - stylesheets/extra.css
 
+extra_javascript:
+  - javascripts/extra.js
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
