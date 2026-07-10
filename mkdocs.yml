@@ -26,11 +26,6 @@ theme:
       toggle:
         icon: material/brightness-4
         name: 切换至浅色模式
-extra_css:
-  - stylesheets/extra.css
-
-extra_javascript:
-  - javascripts/extra.js
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -74,3 +69,8 @@ nav:
       - KVCacheManager: api/kv_cache_manager.md
       - Scheduler: api/scheduler.md
       - Engine: api/llm_engine.md
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js

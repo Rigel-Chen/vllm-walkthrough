@@ -1,4 +1,4 @@
-/* 自定义 tooltip 容器 */
+/* ========== 自定义 Tooltip ========== */
 .custom-tooltip {
   position: absolute;
   max-width: 280px;
@@ -6,7 +6,7 @@
   background: var(--md-primary-fg-color);
   color: var(--md-primary-bg);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   font-size: 0.8rem;
   line-height: 1.5;
   pointer-events: none;
@@ -15,6 +15,55 @@
   transition: opacity 0.2s ease;
 }
 
+.custom-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 20px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--md-primary-fg-color) transparent transparent transparent;
+}
+
 .custom-tooltip.visible {
   opacity: 1;
+}
+
+/* ========== 结构树节点美化 ========== */
+/* 让所有节点默认有轻微阴影和过渡 */
+.mermaid svg g.node polygon,
+.mermaid svg g.node rect,
+.mermaid svg g.node path {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+/* 悬停时放大节点并添加阴影 */
+.mermaid svg g.node:hover polygon,
+.mermaid svg g.node:hover rect,
+.mermaid svg g.node:hover path {
+  filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.25));
+  transform: scale(1.05);
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+/* 悬停时文字加粗 */
+.mermaid svg g.node:hover text {
+  font-weight: bold;
+}
+
+/* 子图（模块分区）美化 */
+.mermaid svg g.cluster rect {
+  fill: #f8f9fa;
+  stroke: #b0bec5;
+  stroke-width: 1.5;
+  rx: 8px;       /* 圆角 */
+  filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.05));
+}
+
+/* 子图标题样式 */
+.mermaid svg g.cluster text {
+  font-weight: 600;
+  fill: #546e7a;
 }
