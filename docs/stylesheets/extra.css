@@ -1,18 +1,19 @@
 /* ========== 自定义 Tooltip ========== */
 .custom-tooltip {
-  position: absolute;
+  position: fixed;
   max-width: 280px;
   padding: 10px 14px;
-  background: var(--md-primary-fg-color);
-  color: var(--md-primary-bg);
+  background: var(--md-primary-fg-color, #3f51b5);
+  color: #ffffff;
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   font-size: 0.8rem;
   line-height: 1.5;
   pointer-events: none;
-  z-index: 1000;
+  z-index: 9999;
   opacity: 0;
   transition: opacity 0.2s ease;
+  white-space: normal;
 }
 
 .custom-tooltip::after {
@@ -22,7 +23,7 @@
   left: 20px;
   border-width: 6px;
   border-style: solid;
-  border-color: var(--md-primary-fg-color) transparent transparent transparent;
+  border-color: var(--md-primary-fg-color, #3f51b5) transparent transparent transparent;
 }
 
 .custom-tooltip.visible {
@@ -30,36 +31,40 @@
 }
 
 /* ========== 结构树节点美化 ========== */
-/* 让所有节点默认有轻微阴影和过渡 */
+/* 让所有节点形状有过渡效果 */
 .mermaid svg g.node polygon,
 .mermaid svg g.node rect,
 .mermaid svg g.node path {
-  transition: all 0.2s ease;
+  transition: filter 0.2s ease, stroke-width 0.2s ease;
   cursor: pointer;
 }
 
-/* 悬停时放大节点并添加阴影 */
+/* 悬停时节点添加发光阴影 + 描边加粗 */
 .mermaid svg g.node:hover polygon,
 .mermaid svg g.node:hover rect,
 .mermaid svg g.node:hover path {
-  filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.25));
-  transform: scale(1.05);
-  transform-origin: center;
-  transform-box: fill-box;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35));
+  stroke-width: 2.5px !important;
 }
 
 /* 悬停时文字加粗 */
 .mermaid svg g.node:hover text {
-  font-weight: bold;
+  font-weight: 700;
 }
 
 /* 子图（模块分区）美化 */
 .mermaid svg g.cluster rect {
-  fill: #f8f9fa;
-  stroke: #b0bec5;
-  stroke-width: 1.5;
-  rx: 8px;       /* 圆角 */
+  fill: #f8f9fa !important;
+  stroke: #b0bec5 !important;
+  stroke-width: 1.5 !important;
+  rx: 8px;
   filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.05));
+}
+
+/* 深色模式下子图背景适配 */
+[data-md-color-scheme="slate"] .mermaid svg g.cluster rect {
+  fill: #2a3140 !important;
+  stroke: #4a5568 !important;
 }
 
 /* 子图标题样式 */
