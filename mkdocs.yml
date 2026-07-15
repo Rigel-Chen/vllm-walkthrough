@@ -67,8 +67,9 @@ nav:
   - API 文档:
       - BlockPool: api/block_pool.md
       - KVCacheManager: api/kv_cache_manager.md
+      - KVCacheCoordinator: api/kv_cache_coordinator.md
       - Scheduler: api/scheduler.md
-      - Engine: api/llm_engine.md
+      - LLMEngine: api/llm_engine.md
 extra_css:
   - stylesheets/extra.css
 

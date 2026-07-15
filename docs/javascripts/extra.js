@@ -1,34 +1,158 @@
 // ============================================================
-//  Mermaid 节点悬浮提示（事件委托版，不依赖渲染时机）
-//  核心思路：事件绑在 document 上，利用事件冒泡
-//  不管 mermaid 什么时候渲染 SVG，鼠标移上去都能触发
+//  Mermaid 节点点击详情卡（事件委托版）
+//  点击节点 → 弹出详情卡片，展示完整说明 + API 链接
 // ============================================================
 
-// tooltip 文本映射表（key 为节点文本归一化形式）
-const tooltipMap = {
-  'llmengine.generate': '对外的总入口，接收用户请求并驱动生成流程。',
-  'enginecore.add_request': '将请求封装并注册到引擎核心，准备调度。',
-  'scheduler.schedule': '核心调度器，决定哪些请求可以执行或需要抢占。',
-  '能否分配kvcache?': '判断当前可用缓存是否满足请求需求。',
-  'scheduler.allocate_slot': '为请求分配槽位，并调用 KV Cache 管理器获取物理块。',
-  '等待或抢占': '内存不足时暂停请求或回收低优先级缓存。',
-  'kvcachemanager.allocate': '协调不同 KV 类型的统一分配，委托给具体管理器。',
-  'singletypekvcachemanager.allocate': '针对单一数据类型的物理块分配。',
-  'blockpool.get_new_blocks': '从空闲队列中取出指定数量的物理块。',
-  'blocktable.append': '将新分配的物理块 ID 追加到逻辑块表中。',
-  'kvcachemanager.free': '释放请求占用的所有物理块。',
-  'blockpool.free_blocks': '减少引用计数，计数归零时回收块到空闲队列。',
-  'modelrunner.prepare_model_inputs': '构建 block_table 和 slot_mapping 等张量输入。',
-  'modelrunner.execute_model': '执行一次模型前向传播，计算 logits 并采样。',
-  'attentionbackend操作物理kvcache': '根据 slot_mapping 将当前 token 的 KV 值写入物理缓存。',
+// ---------- 节点详情数据 ----------
+// key: 节点标题归一化（只匹配第一行文字）
+const nodeDetails = {
+  'llmengine.generate': {
+    title: 'LLMEngine.generate',
+    subtitle: '引擎入口层',
+    description: [
+      '对外的总入口，接收用户请求（prompt + sampling params），驱动整个生成流程。',
+      '每次用户发送一次对话请求时触发，是整个推理链路的起点。'
+    ],
+    link: '../api/llm_engine/#llmengine.generate'
+  },
+  'enginecore.add_request': {
+    title: 'EngineCore.add_request',
+    subtitle: '引擎入口层',
+    description: [
+      '将请求封装并注册到引擎核心，分配给 Scheduler 进行调度。',
+      'LLMEngine 收到新请求后立即调用，完成请求的入队与初始化。'
+    ],
+    link: '../api/llm_engine/#enginecore.add_request'
+  },
+  'scheduler.schedule': {
+    title: 'Scheduler.schedule',
+    subtitle: '调度决策层',
+    description: [
+      '核心调度器，决定下一个 step 哪些请求可以执行、哪些需要等待或抢占。',
+      '比较所需 KV Cache 与当前可用块数，若不足则触发抢占回收机制。'
+    ],
+    link: '../api/scheduler/#scheduler.schedule'
+  },
+  '能否分配kvcache?': {
+    title: '能否分配 KV Cache?',
+    subtitle: '调度决策层 · 判断分支',
+    description: [
+      '决策分支节点：判断当前可用缓存是否满足请求需求。',
+      '<strong>是</strong> → 调用 allocate_slot 分配新物理块，继续执行。',
+      '<strong>否</strong> → 进入等待或抢占流程，调用 free 回收其他请求的缓存。'
+    ],
+    link: null
+  },
+  'scheduler.allocate_slot': {
+    title: 'Scheduler.allocate_slot',
+    subtitle: '调度决策层',
+    description: [
+      '为请求分配调度槽位，并调用 KVCacheManager 获取物理块。',
+      '是调度层向缓存层下发分配指令的核心接口。'
+    ],
+    link: '../api/scheduler/#scheduler.allocate_slot'
+  },
+  '等待或抢占': {
+    title: '等待或抢占',
+    subtitle: '调度决策层 · 异常分支',
+    description: [
+      '当内存不足时，Scheduler 的两种处理策略：',
+      '<strong>等待</strong>：暂停当前请求，等其他请求释放缓存后再执行。',
+      '<strong>抢占</strong>：抢先回收低优先级请求的缓存，优先保障高优先级请求。',
+      '具体策略由 Scheduler 内部的抢占算法决定。'
+    ],
+    link: null
+  },
+  'kvcachemanager.allocate': {
+    title: 'KVCacheManager.allocate',
+    subtitle: '缓存管理层',
+    description: [
+      '协调不同 KV 类型（如普通 KV 与跨层共享 KV）的统一分配入口。',
+      '向下委托给 SingleTypeKVCacheManager 执行具体分配逻辑。'
+    ],
+    link: '../api/kv_cache_manager/#kvcachemanager.allocate'
+  },
+  'singletypekvcachemanager': {
+    title: 'SingleTypeKVCacheManager.allocate',
+    subtitle: '缓存管理层',
+    description: [
+      '针对单一数据类型的物理块分配器。',
+      '调用 BlockPool 的底层方法，从空闲队列获取物理块。'
+    ],
+    link: '../api/kv_cache_manager/#singletypekvcachemanager.allocate'
+  },
+  'blockpool.get_new_blocks': {
+    title: 'BlockPool.get_new_blocks',
+    subtitle: '缓存管理层',
+    description: [
+      '从物理块池的空闲队列中取出指定数量的块。',
+      '如果空闲块不足，返回失败，上层将触发抢占逻辑。'
+    ],
+    link: '../api/block_pool/#blockpool.get_new_blocks'
+  },
+  'blocktable.append': {
+    title: 'BlockTable.append',
+    subtitle: '缓存管理层',
+    description: [
+      '将新分配的物理块 ID 追加到请求的逻辑块表中。',
+      '建立逻辑块序号到物理块 ID 的映射关系，是地址翻译的基础。'
+    ],
+    link: '../api/block_table/#blocktable.append'
+  },
+  'kvcachemanager.free': {
+    title: 'KVCacheManager.free',
+    subtitle: '缓存管理层',
+    description: [
+      '释放请求占用的所有物理块的统一入口。',
+      '通常发生在请求完成或被抢占时，向下委托给各类型管理器执行释放。'
+    ],
+    link: '../api/kv_cache_manager/#kvcachemanager.free'
+  },
+  'blockpool.free_blocks': {
+    title: 'BlockPool.free_blocks',
+    subtitle: '缓存管理层',
+    description: [
+      '减少块的引用计数，当引用计数归零时将块放回空闲队列。',
+      '支持共享 KV 的引用计数机制，同一块可被多个请求共享。'
+    ],
+    link: '../api/block_pool/#blockpool.free_blocks'
+  },
+  'modelrunner.prepare_inputs': {
+    title: 'ModelRunner.prepare_model_inputs',
+    subtitle: '模型执行层',
+    description: [
+      '构建模型前向传播所需的 block_table、slot_mapping 等张量。',
+      '将逻辑块映射转换为模型可直接使用的物理地址索引。'
+    ],
+    link: '../api/model_runner/#modelrunner.prepare_model_inputs'
+  },
+  'modelrunner.execute_model': {
+    title: 'ModelRunner.execute_model',
+    subtitle: '模型执行层',
+    description: [
+      '执行一次模型前向传播，计算 logits 并采样下一个 token。',
+      '是生成过程中最核心的计算步骤，耗时占比最高。'
+    ],
+    link: '../api/model_runner/#modelrunner.execute_model'
+  },
+  'attentionbackend': {
+    title: 'Attention Backend',
+    subtitle: '模型执行层',
+    description: [
+      '根据 slot_mapping 将当前 token 的 KV 值写入对应物理块的位置。',
+      '完成 KV 缓存的实际写入，是 Attention 算子的一部分。',
+      '不同后端（FlashAttention、xFormers）实现细节有差异。'
+    ],
+    link: '../api/attention_backend/'
+  }
 };
 
-// 归一化文本：去空格、去换行、转小写
+// ---------- 工具函数 ----------
 function normalizeLabel(text) {
   return text.replace(/[\s\n\r]+/g, '').toLowerCase().trim();
 }
 
-// 从事件目标向上找到最近的 g.node 元素
+// 从事件目标向上找到最近的 g.node
 function findNodeEl(target) {
   let el = target;
   while (el && el !== document) {
@@ -40,88 +164,116 @@ function findNodeEl(target) {
   return null;
 }
 
-// 提取节点文本
-function getNodeText(nodeEl) {
+// 提取节点第一行文本（标题行，用于匹配 key）
+function getNodeFirstLine(nodeEl) {
   const textEl = nodeEl.querySelector('text');
   if (!textEl) return '';
   const tspans = textEl.querySelectorAll('tspan');
   if (tspans.length > 0) {
-    return Array.from(tspans).map(t => t.textContent || '').join('');
+    return tspans[0].textContent || '';
   }
   return textEl.textContent || '';
 }
 
-// 创建并获取 tooltip 元素（单例）
-function getTooltip() {
-  let tooltip = document.querySelector('.custom-tooltip');
-  if (!tooltip) {
-    tooltip = document.createElement('div');
-    tooltip.className = 'custom-tooltip';
-    document.body.appendChild(tooltip);
-  }
-  return tooltip;
-}
+// ---------- 详情卡 DOM 构建 ----------
+let overlay, card;
 
-// 当前激活的节点（防止重复查找）
-let currentNode = null;
+function ensureDetailCard() {
+  if (card) return;
 
-function initEventDelegation() {
-  const tooltip = getTooltip();
+  // 遮罩
+  overlay = document.createElement('div');
+  overlay.className = 'detail-overlay';
 
-  // 鼠标移入/移动
-  document.addEventListener('mousemove', (e) => {
-    const nodeEl = findNodeEl(e.target);
+  // 卡片
+  card = document.createElement('div');
+  card.className = 'detail-card';
+  card.innerHTML = `
+    <div class="detail-card-header">
+      <h3 class="detail-card-title"></h3>
+      <div class="detail-card-subtitle"></div>
+      <button class="detail-card-close" aria-label="关闭">×</button>
+    </div>
+    <div class="detail-card-body"></div>
+    <div class="detail-card-footer">
+      <a class="detail-card-link" target="_blank">查看完整 API 文档 →</a>
+    </div>
+  `;
 
-    if (nodeEl) {
-      // 进入了新节点
-      if (nodeEl !== currentNode) {
-        currentNode = nodeEl;
-        const rawText = getNodeText(nodeEl);
-        const key = normalizeLabel(rawText);
-        const tipText = tooltipMap[key];
+  document.body.appendChild(overlay);
+  document.body.appendChild(card);
 
-        if (tipText) {
-          tooltip.textContent = tipText;
-          tooltip.classList.add('visible');
-        } else {
-          tooltip.classList.remove('visible');
-        }
-      }
-      // 更新位置
-      if (tooltip.classList.contains('visible')) {
-        tooltip.style.left = (e.clientX + 15) + 'px';
-        tooltip.style.top = (e.clientY + 15) + 'px';
-      }
-    } else {
-      // 离开了节点
-      if (currentNode) {
-        currentNode = null;
-        tooltip.classList.remove('visible');
-      }
+  // 关闭事件
+  overlay.addEventListener('click', closeDetail);
+  card.querySelector('.detail-card-close').addEventListener('click', closeDetail);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && card.classList.contains('visible')) {
+      closeDetail();
     }
   });
+}
 
-  // 鼠标快速移出 SVG 区域时兜底隐藏
-  document.addEventListener('mouseleave', () => {
-    currentNode = null;
-    tooltip.classList.remove('visible');
+function openDetail(data) {
+  ensureDetailCard();
+
+  card.querySelector('.detail-card-title').textContent = data.title;
+  card.querySelector('.detail-card-subtitle').textContent = data.subtitle;
+
+  const body = card.querySelector('.detail-card-body');
+  body.innerHTML = data.description.map(p => `<p>${p}</p>`).join('');
+
+  const linkEl = card.querySelector('.detail-card-link');
+  if (data.link) {
+    linkEl.href = data.link;
+    linkEl.classList.remove('no-link');
+  } else {
+    linkEl.classList.add('no-link');
+  }
+
+  overlay.classList.add('visible');
+  card.classList.add('visible');
+}
+
+function closeDetail() {
+  if (overlay) overlay.classList.remove('visible');
+  if (card) card.classList.remove('visible');
+}
+
+// ---------- 事件委托：点击节点 ----------
+function initClickHandler() {
+  document.addEventListener('click', (e) => {
+    const nodeEl = findNodeEl(e.target);
+    if (!nodeEl) return;
+
+    const firstLine = getNodeFirstLine(nodeEl);
+    const key = normalizeLabel(firstLine);
+    const data = nodeDetails[key];
+
+    if (data) {
+      e.preventDefault();
+      e.stopPropagation();
+      openDetail(data);
+    }
   });
 }
 
-// 启动
+// ---------- 启动 ----------
+function init() {
+  initClickHandler();
+}
+
 if (typeof document$ !== 'undefined' && document$.subscribe) {
-  // MkDocs Material：每次页面内容刷新都确保事件已绑定（只绑一次）
-  let bound = false;
-  document$.subscribe(function() {
-    if (!bound) {
-      initEventDelegation();
-      bound = true;
+  let initialized = false;
+  document$.subscribe(() => {
+    if (!initialized) {
+      init();
+      initialized = true;
     }
   });
 } else {
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initEventDelegation);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    initEventDelegation();
+    init();
   }
 }
