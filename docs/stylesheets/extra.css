@@ -1,820 +1,436 @@
 /* ============================================================
-   KV Cache Architecture Page — Complete Design System
+   KV Cache Architecture — Native Flowchart Design System
    ============================================================ */
 
-/* ---------- CSS Custom Properties ---------- */
+/* ---------- Variables ---------- */
 :root {
-  /* Spacing */
-  --arch-gap: 14px;
-  --arch-gap-lg: 24px;
-  --arch-radius: 10px;
-  --arch-radius-sm: 6px;
+  --fc-gap: 18px;
+  --fc-gap-sm: 10px;
+  --fc-radius: 12px;
+  --fc-radius-sm: 8px;
+  --fc-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --fc-shadow-hover: 0 6px 20px rgba(0,0,0,0.12);
+  --fc-ease: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Shadows */
-  --arch-shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-  --arch-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  --arch-shadow-lg: 0 4px 18px rgba(0,0,0,0.10);
-  --arch-shadow-xl: 0 8px 30px rgba(0,0,0,0.14);
+  --fc-engine-bg: #f0f7ff;   --fc-engine-accent: #1976d2;
+  --fc-sched-bg: #fff8f0;    --fc-sched-accent: #f57c00;
+  --fc-coord-bg: #f0faf9;    --fc-coord-accent: #00897b;
+  --fc-cache-bg: #f1f8f1;    --fc-cache-accent: #388e3c;
+  --fc-pool-bg:  #fff5f3;    --fc-pool-accent:  #e64a19;
+  --fc-model-bg: #f8f3fb;    --fc-model-accent: #7b1fa2;
 
-  /* Transitions */
-  --arch-ease: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --arch-ease-bounce: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  /* Layer color themes — 6 layers */
-  --layer-engine-bg:       #f0f7ff;
-  --layer-engine-bg-hover: #e3f0fd;
-  --layer-engine-border:   #90caf9;
-  --layer-engine-accent:   #1976d2;
-  --layer-engine-text:     #0d47a1;
-
-  --layer-sched-bg:       #fff8f0;
-  --layer-sched-bg-hover: #fef0e0;
-  --layer-sched-border:   #ffcc80;
-  --layer-sched-accent:   #f57c00;
-  --layer-sched-text:     #e65100;
-
-  --layer-coord-bg:       #f0faf9;
-  --layer-coord-bg-hover: #e0f5f3;
-  --layer-coord-border:   #80cbc4;
-  --layer-coord-accent:   #00897b;
-  --layer-coord-text:     #004d40;
-
-  --layer-cache-bg:       #f1f8f1;
-  --layer-cache-bg-hover: #e2f3e2;
-  --layer-cache-border:   #a5d6a7;
-  --layer-cache-accent:   #388e3c;
-  --layer-cache-text:     #1b5e20;
-
-  --layer-pool-bg:        #fff5f3;
-  --layer-pool-bg-hover:  #ffebe6;
-  --layer-pool-border:    #ffab91;
-  --layer-pool-accent:    #e64a19;
-  --layer-pool-text:      #bf360c;
-
-  --layer-model-bg:       #f8f3fb;
-  --layer-model-bg-hover: #f0e6f7;
-  --layer-model-border:   #ce93d8;
-  --layer-model-accent:   #7b1fa2;
-  --layer-model-text:     #4a148c;
-
-  /* Diagram container */
-  --diagram-bg:           #fafbfc;
-  --diagram-border:       #e0e4e8;
-  --diagram-text-muted:   #64748b;
+  --fc-arrow-color: #b0bec5;
+  --fc-label-muted: #64748b;
+  --fc-card-bg: #fafbfc;
+  --fc-border: #e0e4e8;
 }
 
-/* ---------- Dark Mode Overrides ---------- */
 [data-md-color-scheme="slate"] {
-  --arch-shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
-  --arch-shadow:    0 2px 8px rgba(0,0,0,0.35);
-  --arch-shadow-lg: 0 4px 18px rgba(0,0,0,0.45);
-  --arch-shadow-xl: 0 8px 30px rgba(0,0,0,0.55);
-
-  --layer-engine-bg:       #1a2535;
-  --layer-engine-bg-hover: #1f2d40;
-  --layer-engine-border:   #2a4a6b;
-  --layer-sched-bg:        #221e18;
-  --layer-sched-bg-hover:  #2a241c;
-  --layer-sched-border:    #4a3a20;
-  --layer-coord-bg:        #182220;
-  --layer-coord-bg-hover:  #1d2a28;
-  --layer-coord-border:    #2a4a44;
-  --layer-cache-bg:        #18201a;
-  --layer-cache-bg-hover:  #1d2820;
-  --layer-cache-border:    #2a4a30;
-  --layer-pool-bg:         #221a18;
-  --layer-pool-bg-hover:   #2a201c;
-  --layer-pool-border:     #4a2a20;
-  --layer-model-bg:        #1e1a24;
-  --layer-model-bg-hover:  #24202c;
-  --layer-model-border:    #3a2a4a;
-
-  --diagram-bg:       #1a1f2b;
-  --diagram-border:   #2d3548;
-  --diagram-text-muted: #8899aa;
+  --fc-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  --fc-shadow-hover: 0 6px 20px rgba(0,0,0,0.5);
+  --fc-engine-bg: #1a2535; --fc-sched-bg: #221e18;
+  --fc-coord-bg: #182220;  --fc-cache-bg: #18201a;
+  --fc-pool-bg: #221a18;   --fc-model-bg: #1e1a24;
+  --fc-arrow-color: #3a4558;
+  --fc-label-muted: #8899aa;
+  --fc-card-bg: #1a1f2b;
+  --fc-border: #2d3548;
 }
 
 
 /* ============================================================
-   1. Section Headers
+   1. Flowchart Container
    ============================================================ */
-.arch-section {
-  margin: 48px 0 32px;
+.fc {
+  margin: 28px 0 40px;
+  padding: 0;
 }
 
-.arch-section h2 {
+/* Vertical flow: nodes stacked top-to-bottom */
+.fc-v {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  font-size: 1.35rem;
-  font-weight: 700;
-  padding-bottom: 12px;
-  border-bottom: 2px solid var(--diagram-border);
-  margin-bottom: 4px;
+  gap: 0;
 }
 
-.arch-section h2 .arch-section-icon {
-  font-size: 1.4rem;
-  flex-shrink: 0;
-}
-
-.arch-section-desc {
-  color: var(--diagram-text-muted);
-  font-size: 0.9rem;
-  margin-bottom: var(--arch-gap-lg);
-  line-height: 1.6;
-}
-
-
-/* ============================================================
-   2. Architecture Explorer — Section 二
-   ============================================================ */
-.arch-explorer {
-  margin-top: var(--arch-gap);
-}
-
-/* Global controls */
-.arch-controls {
+/* Horizontal row */
+.fc-row {
   display: flex;
-  gap: 10px;
-  margin-bottom: var(--arch-gap-lg);
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--fc-gap-sm);
   flex-wrap: wrap;
 }
 
-.arch-controls button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  border: 1.5px solid var(--diagram-border);
-  border-radius: 20px;
-  background: var(--diagram-bg);
-  color: var(--md-default-fg-color, #333);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--arch-ease);
-  box-shadow: var(--arch-shadow-sm);
-}
-
-.arch-controls button:hover {
-  border-color: var(--md-primary-fg-color, #3f51b5);
-  color: var(--md-primary-fg-color, #3f51b5);
-  box-shadow: var(--arch-shadow);
-}
-
-/* Layer card */
-.arch-layer {
-  border-radius: var(--arch-radius);
-  margin-bottom: var(--arch-gap);
-  overflow: hidden;
-  transition: box-shadow var(--arch-ease);
-}
-
-.arch-layer[data-open="true"] {
-  box-shadow: var(--arch-shadow-lg);
-}
-
-/* Layer header (clickable) */
-.arch-layer-header {
+/* Split (two-column fork) */
+.fc-split {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 40px;
   width: 100%;
-  padding: 16px 18px;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  font-size: 1rem;
-  transition: background var(--arch-ease), box-shadow var(--arch-ease);
-  box-shadow: var(--arch-shadow-sm);
-  border-radius: var(--arch-radius);
+  max-width: 860px;
+  flex-wrap: wrap;
 }
-
-.arch-layer[data-open="true"] .arch-layer-header {
-  border-radius: var(--arch-radius) var(--arch-radius) 0 0;
-}
-
-.arch-layer-header:hover {
-  filter: brightness(0.97);
-}
-
-/* Per-layer header colors */
-.arch-layer[data-layer="engine"] .arch-layer-header {
-  background: var(--layer-engine-bg);
-  border-left: 4px solid var(--layer-engine-accent);
-}
-.arch-layer[data-layer="engine"] .arch-layer-header:hover {
-  background: var(--layer-engine-bg-hover);
-}
-
-.arch-layer[data-layer="scheduler"] .arch-layer-header {
-  background: var(--layer-sched-bg);
-  border-left: 4px solid var(--layer-sched-accent);
-}
-.arch-layer[data-layer="scheduler"] .arch-layer-header:hover {
-  background: var(--layer-sched-bg-hover);
-}
-
-.arch-layer[data-layer="coordinator"] .arch-layer-header {
-  background: var(--layer-coord-bg);
-  border-left: 4px solid var(--layer-coord-accent);
-}
-.arch-layer[data-layer="coordinator"] .arch-layer-header:hover {
-  background: var(--layer-coord-bg-hover);
-}
-
-.arch-layer[data-layer="cache"] .arch-layer-header {
-  background: var(--layer-cache-bg);
-  border-left: 4px solid var(--layer-cache-accent);
-}
-.arch-layer[data-layer="cache"] .arch-layer-header:hover {
-  background: var(--layer-cache-bg-hover);
-}
-
-.arch-layer[data-layer="pool"] .arch-layer-header {
-  background: var(--layer-pool-bg);
-  border-left: 4px solid var(--layer-pool-accent);
-}
-.arch-layer[data-layer="pool"] .arch-layer-header:hover {
-  background: var(--layer-pool-bg-hover);
-}
-
-.arch-layer[data-layer="model"] .arch-layer-header {
-  background: var(--layer-model-bg);
-  border-left: 4px solid var(--layer-model-accent);
-}
-.arch-layer[data-layer="model"] .arch-layer-header:hover {
-  background: var(--layer-model-bg-hover);
-}
-
-/* Header content */
-.arch-layer-icon {
-  font-size: 1.3rem;
-  flex-shrink: 0;
-}
-
-.arch-layer-info {
+.fc-split-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
   flex: 1;
-  min-width: 0;
+  min-width: 260px;
+  max-width: 420px;
 }
 
-.arch-layer-title {
-  font-weight: 700;
-  color: var(--md-default-fg-color, #222);
-  display: block;
-}
 
-.arch-layer-subtitle {
-  font-size: 0.78rem;
-  color: var(--diagram-text-muted);
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
-}
-
-.arch-layer-chevron {
-  flex-shrink: 0;
-  font-size: 0.8rem;
-  color: var(--diagram-text-muted);
-  transition: transform var(--arch-ease-bounce);
-}
-
-.arch-layer[data-open="true"] .arch-layer-chevron {
-  transform: rotate(90deg);
-}
-
-/* Layer body (expandable) */
-.arch-layer-body {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.4s ease, padding 0.3s ease;
-  background: var(--md-default-bg-color, #fff);
-  border: 1.5px solid var(--diagram-border);
-  border-top: none;
-  border-radius: 0 0 var(--arch-radius) var(--arch-radius);
-}
-
-.arch-layer[data-open="true"] .arch-layer-body {
-  max-height: 2000px;
-}
-
-.arch-layer-body-inner {
-  padding: 20px 22px;
-}
-
-/* Subsection within layer body */
-.arch-subsection {
-  margin-bottom: 18px;
-}
-
-.arch-subsection:last-child {
-  margin-bottom: 0;
-}
-
-.arch-subsection-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--diagram-text-muted);
-  margin-bottom: 10px;
-}
-
-/* Component grid */
-.arch-components {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-}
-
-/* Component card */
-.arch-component {
+/* ============================================================
+   2. Flowchart Nodes (Cards)
+   ============================================================ */
+.fc-card {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 12px 14px;
-  border-radius: var(--arch-radius-sm);
-  background: var(--diagram-bg);
-  border: 1px solid var(--diagram-border);
+  padding: 16px 22px;
+  border-radius: var(--fc-radius);
+  background: var(--fc-card-bg);
+  border: 1.5px solid var(--fc-border);
+  box-shadow: var(--fc-shadow);
   text-decoration: none;
-  transition: all var(--arch-ease);
+  color: inherit;
+  cursor: default;
+  transition: all var(--fc-ease);
+  text-align: left;
+  min-width: 200px;
+  max-width: 360px;
   position: relative;
-  overflow: hidden;
+  scroll-margin-top: 80px;
 }
 
-.arch-component::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  border-radius: 0 2px 2px 0;
+a.fc-card {
+  cursor: pointer;
+}
+a.fc-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--fc-shadow-hover);
 }
 
-.arch-component:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--arch-shadow-lg);
-  border-color: var(--md-primary-fg-color, #3f51b5);
-}
-
-.arch-comp-name {
-  font-weight: 600;
-  font-size: 0.9rem;
+.fc-card-name {
+  font-weight: 700;
+  font-size: 0.95rem;
   font-family: "SF Mono", "Fira Code", "Consolas", monospace;
   letter-spacing: -0.01em;
   color: var(--md-default-fg-color, #222);
 }
-
-.arch-component:hover .arch-comp-name {
+a.fc-card:hover .fc-card-name {
   color: var(--md-primary-fg-color, #3f51b5);
 }
 
-.arch-comp-desc {
+.fc-card-desc {
   font-size: 0.78rem;
-  color: var(--diagram-text-muted);
+  color: var(--fc-label-muted);
   line-height: 1.4;
 }
 
-/* Connection arrows */
-.arch-connections {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+/* Per-layer color accents (left border + hover border) */
+.fc-card[data-layer="engine"] { border-left: 4px solid var(--fc-engine-accent); }
+.fc-card[data-layer="engine"]:hover { border-color: var(--fc-engine-accent); }
+
+.fc-card[data-layer="scheduler"] { border-left: 4px solid var(--fc-sched-accent); }
+.fc-card[data-layer="scheduler"]:hover { border-color: var(--fc-sched-accent); }
+
+.fc-card[data-layer="coordinator"] { border-left: 4px solid var(--fc-coord-accent); }
+.fc-card[data-layer="coordinator"]:hover { border-color: var(--fc-coord-accent); }
+
+.fc-card[data-layer="cache"] { border-left: 4px solid var(--fc-cache-accent); }
+.fc-card[data-layer="cache"]:hover { border-color: var(--fc-cache-accent); }
+
+.fc-card[data-layer="pool"] { border-left: 4px solid var(--fc-pool-accent); }
+.fc-card[data-layer="pool"]:hover { border-color: var(--fc-pool-accent); }
+
+.fc-card[data-layer="model"] { border-left: 4px solid var(--fc-model-accent); }
+.fc-card[data-layer="model"]:hover { border-color: var(--fc-model-accent); }
+
+/* Active state (scroll spy) */
+.fc-card.active {
+  border-color: var(--md-primary-fg-color, #3f51b5) !important;
+  box-shadow: 0 0 0 3px rgba(63,81,181,0.2);
 }
 
-.arch-conn-down,
-.arch-conn-up {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 14px;
-  border-radius: var(--arch-radius-sm);
-  font-size: 0.85rem;
-  background: var(--diagram-bg);
-  border: 1px dashed var(--diagram-border);
-}
-
-.arch-conn-arrow {
-  font-size: 1rem;
-  flex-shrink: 0;
-  width: 24px;
-  text-align: center;
-  color: var(--diagram-text-muted);
-}
-
-.arch-conn-label {
-  color: var(--md-default-fg-color, #444);
-  line-height: 1.4;
-}
-
-
-/* ============================================================
-   3. Diagram Container — Sections 一 / 三 / 四 / 五 / 六
-   ============================================================ */
-.arch-diagram {
-  margin: var(--arch-gap-lg) 0;
-  border-radius: var(--arch-radius);
-  border: 1.5px solid var(--diagram-border);
-  background: var(--diagram-bg);
-  box-shadow: var(--arch-shadow);
-  overflow: hidden;
-}
-
-.arch-diagram-header {
-  padding: 14px 20px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--diagram-text-muted);
-  border-bottom: 1px solid var(--diagram-border);
-  background: rgba(0,0,0,0.015);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-[data-md-color-scheme="slate"] .arch-diagram-header {
-  background: rgba(255,255,255,0.025);
-}
-
-.arch-diagram-body {
-  padding: 20px;
-}
-
-.arch-diagram-body .mermaid {
-  margin: 0;
-}
-
-.arch-diagram-body .mermaid svg {
-  max-width: 100% !important;
-  height: auto !important;
-}
-
-/* Diagram note */
-.arch-diagram-note {
-  margin-top: 14px;
-  padding: 12px 16px;
-  background: rgba(255,193,7,0.08);
-  border-left: 3px solid #ffc107;
-  border-radius: 0 var(--arch-radius-sm) var(--arch-radius-sm) 0;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  color: var(--md-default-fg-color, #444);
-}
-
-[data-md-color-scheme="slate"] .arch-diagram-note {
-  background: rgba(255,193,7,0.06);
-}
-
-
-/* ============================================================
-   4. Text Details — expandable explanations
-   ============================================================ */
-.arch-details {
-  margin-top: var(--arch-gap);
-  border: 1.5px solid var(--diagram-border);
-  border-radius: var(--arch-radius);
-  overflow: hidden;
-}
-
-.arch-details summary {
-  padding: 12px 18px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  background: var(--diagram-bg);
-  color: var(--diagram-text-muted);
-  transition: background var(--arch-ease);
-  list-style: none;
-}
-
-.arch-details summary::-webkit-details-marker {
-  display: none;
-}
-
-.arch-details summary::before {
-  content: "▸ ";
-  display: inline-block;
-  transition: transform var(--arch-ease-bounce);
-  margin-right: 4px;
-}
-
-.arch-details[open] summary::before {
-  transform: rotate(90deg);
-}
-
-.arch-details summary:hover {
-  background: rgba(0,0,0,0.03);
-}
-
-[data-md-color-scheme="slate"] .arch-details summary:hover {
-  background: rgba(255,255,255,0.03);
-}
-
-.arch-details .arch-details-body {
-  padding: 16px 20px;
-  font-size: 0.9rem;
-  line-height: 1.7;
-  color: var(--md-default-fg-color, #333);
-}
-
-.arch-details .arch-details-body ol,
-.arch-details .arch-details-body ul {
-  padding-left: 20px;
-  margin: 8px 0;
-}
-
-.arch-details .arch-details-body li {
-  margin-bottom: 6px;
-}
-
-.arch-details .arch-details-body code {
-  font-size: 0.85em;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--diagram-bg);
-  border: 0.5px solid var(--diagram-border);
-}
-
-
-/* ============================================================
-   5. Mermaid SVG Enhancements
-   ============================================================ */
-/* Node hover */
-.mermaid svg g.node polygon,
-.mermaid svg g.node rect,
-.mermaid svg g.node path {
-  transition: filter 0.2s ease, stroke-width 0.2s ease;
-  cursor: pointer;
-}
-
-.mermaid svg g.node:hover polygon,
-.mermaid svg g.node:hover rect,
-.mermaid svg g.node:hover path {
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35));
-  stroke-width: 2.5px !important;
-}
-
-.mermaid svg g.node:hover text {
-  font-weight: 700;
-}
-
-/* Subgraph clusters */
-.mermaid svg g.cluster rect {
-  fill: #f8f9fa !important;
-  stroke: #b0bec5 !important;
-  stroke-width: 1.5 !important;
-  rx: 8px;
-}
-
-[data-md-color-scheme="slate"] .mermaid svg g.cluster rect {
-  fill: #222b3a !important;
-  stroke: #3a4558 !important;
-}
-
-.mermaid svg g.cluster text {
-  font-weight: 600;
-  fill: #546e7a;
-}
-
-/* Second-line descriptions */
-.mermaid svg g.node text tspan:not(:first-child) {
-  font-size: 11px;
-  fill: #78909c;
-  font-weight: 400;
-}
-
-[data-md-color-scheme="slate"] .mermaid svg g.node text tspan:not(:first-child) {
-  fill: #8899aa;
-}
-
-
-/* ============================================================
-   6. Mermaid Container Overflow
-   ============================================================ */
-.mermaid {
-  overflow-x: auto;
-  overflow-y: hidden;
-  display: block;
-}
-
-.mermaid svg {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Scrollbar */
-.mermaid::-webkit-scrollbar { height: 6px; }
-.mermaid::-webkit-scrollbar-track { background: transparent; }
-.mermaid::-webkit-scrollbar-thumb {
-  background: #b0bec5;
-  border-radius: 3px;
-}
-.mermaid::-webkit-scrollbar-thumb:hover { background: #78909c; }
-
-
-/* ============================================================
-   7. Detail Card Overlay (Node Click)
-   ============================================================ */
-.detail-overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.45);
-  z-index: 9998;
-  opacity: 0; visibility: hidden;
-  transition: opacity 0.25s ease, visibility 0.25s ease;
-  backdrop-filter: blur(2px);
-}
-
-.detail-overlay.visible { opacity: 1; visibility: visible; }
-
-.detail-card {
-  position: fixed;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -48%) scale(0.95);
-  width: 90%; max-width: 480px;
-  background: var(--md-default-bg-color, #fff);
-  border-radius: 12px;
-  box-shadow: var(--arch-shadow-xl);
-  z-index: 9999;
-  opacity: 0; visibility: hidden;
-  transition: all var(--arch-ease);
-  overflow: hidden;
-}
-
-.detail-card.visible {
-  opacity: 1; visibility: visible;
-  transform: translate(-50%, -50%) scale(1);
-}
-
-.detail-card-header {
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--diagram-border);
-  position: relative;
-}
-
-.detail-card-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin: 0;
-  color: var(--md-default-fg-color, #222);
-  padding-right: 30px;
-}
-
-.detail-card-subtitle {
-  font-size: 0.85rem;
-  color: var(--diagram-text-muted);
-  margin-top: 4px;
-}
-
-.detail-card-close {
-  position: absolute;
-  top: 14px; right: 16px;
-  width: 28px; height: 28px;
-  border: none;
-  background: transparent;
-  font-size: 20px;
-  color: var(--diagram-text-muted);
-  cursor: pointer;
-  border-radius: 6px;
+/* Decision node (diamond shape via clip-path) */
+.fc-decision {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease;
-}
-
-.detail-card-close:hover {
-  background: var(--diagram-bg);
-  color: var(--md-default-fg-color, #333);
-}
-
-.detail-card-body {
-  padding: 18px 24px 20px;
-  font-size: 0.92rem;
-  line-height: 1.7;
-  color: var(--md-default-fg-color, #333);
-}
-
-.detail-card-body p { margin: 0 0 10px 0; }
-.detail-card-body p:last-child { margin-bottom: 0; }
-.detail-card-body strong {
-  color: var(--md-primary-fg-color, #3f51b5);
+  text-align: center;
+  padding: 18px 26px;
+  min-width: 160px;
+  min-height: 56px;
+  background: #fffde7;
+  border: 2px solid #f9a825;
+  border-radius: 4px;
+  box-shadow: var(--fc-shadow);
   font-weight: 600;
+  font-size: 0.9rem;
+  color: #f57f17;
+  position: relative;
+}
+[data-md-color-scheme="slate"] .fc-decision {
+  background: #2a2610;
+  border-color: #8d6e00;
+  color: #ffd54f;
 }
 
-.detail-card-footer {
-  padding: 14px 24px 20px;
-  border-top: 1px solid var(--diagram-border);
+/* Terminal node (rounded) */
+.fc-end {
+  border-radius: 24px;
+  background: #e8f5e9;
+  border: 2px solid #66bb6a;
+  font-weight: 600;
+  color: #2e7d32;
+}
+[data-md-color-scheme="slate"] .fc-end {
+  background: #142818;
+  border-color: #2e7d32;
+  color: #81c784;
 }
 
-.detail-card-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: var(--md-primary-fg-color, #3f51b5);
-  color: #fff !important;
-  text-decoration: none;
-  border-radius: 6px;
+/* Compact variant */
+.fc-card-sm {
+  padding: 10px 16px;
+  min-width: 140px;
+  max-width: 240px;
+}
+.fc-card-sm .fc-card-name { font-size: 0.82rem; }
+.fc-card-sm .fc-card-desc { font-size: 0.72rem; }
+
+/* Header card (section title within flowchart) */
+.fc-header {
+  padding: 10px 20px;
   font-size: 0.85rem;
-  font-weight: 500;
-  transition: background 0.2s ease;
+  font-weight: 700;
+  text-align: center;
+  border-radius: var(--fc-radius-sm);
+  min-width: 200px;
 }
-
-.detail-card-link:hover {
-  background: var(--md-primary-fg-color--dark, #283593);
-  text-decoration: none;
-}
-
-.detail-card-link.no-link { display: none; }
 
 
 /* ============================================================
-   8. Custom Tooltip
+   3. Arrows & Connectors
    ============================================================ */
-.custom-tooltip {
-  position: fixed;
-  max-width: 280px;
-  padding: 10px 14px;
-  background: var(--md-primary-fg-color, #3f51b5);
-  color: #fff;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-  font-size: 0.8rem;
-  line-height: 1.5;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+/* Vertical arrow: downward connector between stacked nodes */
+.fc-arr-d {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 0;
+  color: var(--fc-arrow-color);
 }
-
-.custom-tooltip::after {
+.fc-arr-d::before {
   content: "";
-  position: absolute;
-  top: 100%; left: 20px;
-  border-width: 6px;
-  border-style: solid;
-  border-color: var(--md-primary-fg-color, #3f51b5) transparent transparent transparent;
+  width: 2px;
+  height: 18px;
+  background: var(--fc-arrow-color);
+}
+.fc-arr-d::after {
+  content: "";
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--fc-arrow-color);
 }
 
-.custom-tooltip.visible { opacity: 1; }
+/* Vertical arrow with label */
+.fc-arr-label {
+  font-size: 0.78rem;
+  color: var(--fc-label-muted);
+  padding: 3px 10px;
+  max-width: 420px;
+  text-align: center;
+  line-height: 1.4;
+}
+.fc-arr-label code {
+  font-size: 0.85em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--fc-card-bg);
+  border: 0.5px solid var(--fc-border);
+}
+
+/* Horizontal arrow between side-by-side nodes */
+.fc-arr-r {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--fc-arrow-color);
+  padding: 0 2px;
+}
+.fc-arr-r::before {
+  content: "";
+  width: 16px;
+  height: 2px;
+  background: var(--fc-arrow-color);
+}
+.fc-arr-r::after {
+  content: "";
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid var(--fc-arrow-color);
+}
+
+/* Dashed arrow */
+.fc-arr-dash::before { background: repeating-linear-gradient(90deg, var(--fc-arrow-color) 0 4px, transparent 4px 8px); }
+
+/* Left arrow */
+.fc-arr-l {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--fc-arrow-color);
+  padding: 0 2px;
+}
+.fc-arr-l::after {
+  content: "";
+  width: 16px;
+  height: 2px;
+  background: var(--fc-arrow-color);
+}
+.fc-arr-l::before {
+  content: "";
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 7px solid var(--fc-arrow-color);
+}
+
+/* Arrow group (arrow + label in column) */
+.fc-arr-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
 
 
 /* ============================================================
-   9. Responsive
+   4. Branching Connectors (decision → two paths)
+   ============================================================ */
+.fc-branch {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.fc-branch-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+}
+
+.fc-branch-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fc-label-muted);
+  padding: 2px 8px;
+}
+
+
+/* ============================================================
+   5. Page Layout
+   ============================================================ */
+.arch-section {
+  margin: 48px 0 32px;
+  scroll-margin-top: 80px;
+}
+
+.arch-section h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--fc-border);
+  margin-bottom: 8px;
+}
+
+.arch-section-desc {
+  color: var(--fc-label-muted);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+
+/* ============================================================
+   6. Expandable Details (explanations)
+   ============================================================ */
+.fc-details {
+  margin-top: var(--fc-gap);
+  border: 1.5px solid var(--fc-border);
+  border-radius: var(--fc-radius-sm);
+  overflow: hidden;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.fc-details summary {
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  background: var(--fc-card-bg);
+  color: var(--fc-label-muted);
+  list-style: none;
+}
+.fc-details summary::-webkit-details-marker { display: none; }
+.fc-details summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform 0.3s ease;
+  margin-right: 4px;
+}
+.fc-details[open] summary::before { transform: rotate(90deg); }
+.fc-details-body {
+  padding: 14px 18px;
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+.fc-details-body ol, .fc-details-body ul { padding-left: 20px; margin: 6px 0; }
+.fc-details-body li { margin-bottom: 4px; }
+
+
+/* ============================================================
+   7. Section Navigation (Overview → Detail)
+   ============================================================ */
+.arch-overview-title {
+  text-align: center;
+  margin-bottom: 6px;
+}
+.arch-overview-subtitle {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--fc-label-muted);
+  margin-bottom: 20px;
+}
+
+
+/* ============================================================
+   8. Responsive
    ============================================================ */
 @media (max-width: 768px) {
-  .arch-layer-header {
-    padding: 12px 14px;
-    gap: 8px;
-  }
-
-  .arch-layer-title {
-    font-size: 0.9rem;
-  }
-
-  .arch-layer-subtitle {
-    font-size: 0.72rem;
-  }
-
-  .arch-components {
-    grid-template-columns: 1fr;
-  }
-
-  .arch-layer-body-inner {
-    padding: 14px 16px;
-  }
-
-  .arch-diagram-body {
-    padding: 12px;
-  }
-
-  .arch-controls button {
-    padding: 6px 14px;
-    font-size: 0.8rem;
-  }
+  .fc-card { min-width: 150px; max-width: 280px; padding: 12px 16px; }
+  .fc-card-name { font-size: 0.85rem; }
+  .fc-card-desc { font-size: 0.72rem; }
+  .fc-split { gap: 20px; }
+  .fc-split-col { min-width: 200px; }
+  .fc-branch { gap: 16px; flex-direction: column; align-items: center; }
+  .fc-arr-label { font-size: 0.72rem; max-width: 90%; }
 }
 
 @media (max-width: 480px) {
-  .arch-section h2 {
-    font-size: 1.15rem;
-  }
-
-  .arch-layer-icon {
-    font-size: 1.1rem;
-  }
-
-  .arch-component {
-    padding: 10px 12px;
-  }
-
-  .detail-card {
-    width: 95%;
-    max-width: none;
-  }
+  .arch-section h2 { font-size: 1.1rem; }
+  .fc-card { min-width: 120px; max-width: 220px; }
+  .fc-split { flex-direction: column; align-items: center; }
 }
