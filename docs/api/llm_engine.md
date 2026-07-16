@@ -6,6 +6,15 @@
 
 ---
 
+## InputProcessor 与 OutputProcessor {#input-output-processor}
+
+`LLMEngine` 内部通过两个处理器完成请求的预处理与后处理：
+
+- **`InputProcessor`**：定义于 `vllm/v1/engine/input_processor.py`，负责将用户原始输入（prompt 文本/token ids/多模态数据）转换为引擎内部 `EngineCoreRequest`，包括 tokenize、prompt 格式化、多模态占位符注入。
+- **`OutputProcessor`**：定义于 `vllm/v1/engine/output_processor.py`，负责将引擎核心输出反 tokenize、组装流式 `RequestOutput`、检测停止条件。
+
+---
+
 ## 一、初始化与核心属性
 
 ```python

@@ -6,7 +6,7 @@
 
 ---
 
-# `BlockHashToBlockMap` 哈希映射表
+# `BlockHashToBlockMap` 哈希映射表 {#blockhashtoblockmap}
 
 `BlockHashToBlockMap` 是前缀缓存的核心索引结构，维护「块哈希+缓存组ID」到物理 `KVCacheBlock` 的映射关系。针对绝大多数「单哈希对应单块」的场景做了存储优化，避免嵌套字典带来的 GC 开销。该结构不做重复块去重，保证已分配块ID始终不变，使请求块表保持仅追加特性。
 
@@ -242,7 +242,7 @@ class BlockPool:
 
 ---
 
-## 五、块释放与驱逐策略
+## 五、块释放与驱逐策略 {#evict-blocks}
 
 ### 核心代码片段
 ```python
@@ -274,7 +274,7 @@ class BlockPool:
 
 ---
 
-## 六、前缀缓存全局维护
+## 六、前缀缓存全局维护 {#prefix-cache-maintenance}
 
 ```python
     def reset_prefix_cache(self) -> bool:
@@ -296,7 +296,7 @@ class BlockPool:
 
 ---
 
-## 七、状态查询与事件机制
+## 七、状态查询与事件机制 {#events-metrics}
 
 ### 核心代码片段
 ```python

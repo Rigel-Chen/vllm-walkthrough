@@ -68,8 +68,10 @@ nav:
       - BlockPool: api/block_pool.md
       - KVCacheManager: api/kv_cache_manager.md
       - KVCacheCoordinator: api/kv_cache_coordinator.md
+      - SingleTypeKVCacheManager: api/single_type_kv_cache_manager.md
       - Scheduler: api/scheduler.md
       - LLMEngine: api/llm_engine.md
+      - ModelRunner: api/model_runner.md
 extra_css:
   - stylesheets/extra.css
 

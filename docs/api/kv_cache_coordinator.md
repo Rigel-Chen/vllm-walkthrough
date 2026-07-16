@@ -111,7 +111,7 @@ class KVCacheCoordinator(ABC):
 
 ## 三、具体实现子类
 
-### 1. `KVCacheCoordinatorNoPrefixCache` 无前缀缓存协调器
+### 1. `KVCacheCoordinatorNoPrefixCache` 无前缀缓存协调器 {#no-prefix-cache}
 
 适用于前缀缓存禁用或不支持的场景，兼容任意数量的缓存组（包括 0 组），所有缓存相关操作均为空实现或返回默认值。
 
@@ -122,7 +122,7 @@ class KVCacheCoordinator(ABC):
 | `find_longest_cache_hit(...)` | 直接返回空块列表与命中长度 0，不做任何哈希查找 |
 | `get_num_common_prefix_blocks(...)` | 全量返回 0 列表，无公共前缀可言 |
 
-### 2. `UnitaryKVCacheCoordinator` 单缓存组协调器
+### 2. `UnitaryKVCacheCoordinator` 单缓存组协调器 {#unitary}
 
 适用于模型只有一种 KV 缓存类型的场景（如纯全注意力、纯滑动窗口），是最常见、性能最优的路径，直接委托给唯一的单类型管理器执行。
 
@@ -137,7 +137,7 @@ class KVCacheCoordinator(ABC):
 |--------|------|
 | `find_longest_cache_hit(...)` | 直接调用单组管理器的命中查找逻辑，返回命中块与总命中 token 数 |
 
-### 3. `HybridKVCacheCoordinator` 混合缓存组协调器
+### 3. `HybridKVCacheCoordinator` 混合缓存组协调器 {#hybrid}
 
 适用于多层混合注意力模型（如部分层全注意力 + 部分层滑动窗口），核心挑战是保证不同块大小、不同缓存策略的组之间前缀命中长度一致。
 
@@ -171,7 +171,7 @@ class HybridKVCacheCoordinator(KVCacheCoordinator):
 
 ---
 
-## 四、工厂函数
+## 四、工厂函数 {#factory}
 
 ```python
 def get_kv_cache_coordinator(

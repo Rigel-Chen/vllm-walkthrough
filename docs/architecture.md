@@ -122,14 +122,14 @@
 </div>
 
 <div class="fc-row" markdown="1">
-<div class="fc-card fc-card-sm" data-layer="engine" markdown="1">
+<a href="../api/llm_engine/#input-output-processor" class="fc-card fc-card-sm" data-layer="engine" markdown="1">
 <span class="fc-card-name">InputProcessor</span>
 <span class="fc-card-desc">输入预处理：tokenize、prompt 格式化</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="engine" markdown="1">
+</a>
+<a href="../api/llm_engine/#input-output-processor" class="fc-card fc-card-sm" data-layer="engine" markdown="1">
 <span class="fc-card-name">OutputProcessor</span>
 <span class="fc-card-desc">输出后处理：detokenize、streaming 封装</span>
-</div>
+</a>
 </div>
 
 </div>
@@ -159,18 +159,18 @@
 </div>
 
 <div class="fc-row" markdown="1">
-<div class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
+<a href="../api/scheduler/#schedule" class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
 <span class="fc-card-name">waiting</span>
 <span class="fc-card-desc">缓存不足时挂起</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
+</a>
+<a href="../api/scheduler/#schedule" class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
 <span class="fc-card-name">running</span>
 <span class="fc-card-desc">已分配正在执行</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
+</a>
+<a href="../api/scheduler/#preemption" class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
 <span class="fc-card-name">_preempt_request()</span>
 <span class="fc-card-desc">抢占回收低优先级缓存</span>
-</div>
+</a>
 </div>
 
 <div class="fc-arr-group" markdown="1">
@@ -179,18 +179,18 @@
 </div>
 
 <div class="fc-row" markdown="1">
-<div class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
+<a href="../api/scheduler/#spec-decode" class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
 <span class="fc-card-name">推测解码</span>
 <span class="fc-card-desc">EAGLE / Draft / DFlash</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
+</a>
+<a href="../api/scheduler/#kv-connector" class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
 <span class="fc-card-name">KVConnector</span>
 <span class="fc-card-desc">分布式 KV 传输</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
+</a>
+<a href="../api/scheduler/#kv-connector" class="fc-card fc-card-sm" data-layer="scheduler" markdown="1">
 <span class="fc-card-name">EncoderCacheMgr</span>
 <span class="fc-card-desc">多模态编码器缓存</span>
-</div>
+</a>
 </div>
 
 <div class="fc-arr-group" markdown="1">
@@ -240,18 +240,18 @@
 </div>
 
 <div class="fc-row" markdown="1">
-<div class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
+<a href="../api/kv_cache_coordinator/#no-prefix-cache" class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
 <span class="fc-card-name">NoPrefixCache</span>
 <span class="fc-card-desc">无前缀缓存，每次全量分配</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
+</a>
+<a href="../api/kv_cache_coordinator/#unitary" class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
 <span class="fc-card-name">Unitary</span>
 <span class="fc-card-desc">单缓存组，一种注意力类型</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
+</a>
+<a href="../api/kv_cache_coordinator/#hybrid" class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
 <span class="fc-card-name">Hybrid</span>
 <span class="fc-card-desc">混合多组，不动点迭代协调</span>
-</div>
+</a>
 </div>
 
 <div class="fc-arr-group" markdown="1">
@@ -308,14 +308,14 @@
 </div>
 
 <div class="fc-row" markdown="1">
-<div class="fc-card fc-card-sm" data-layer="cache" markdown="1">
+<a href="../api/kv_cache_manager/#kvcacheblocks" class="fc-card fc-card-sm" data-layer="cache" markdown="1">
 <span class="fc-card-name">KVCacheBlocks</span>
 <span class="fc-card-desc">按组组织块列表</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="cache" markdown="1">
+</a>
+<a href="../api/single_type_kv_cache_manager/" class="fc-card fc-card-sm" data-layer="cache" markdown="1">
 <span class="fc-card-name">SingleTypeKVCacheManager</span>
 <span class="fc-card-desc">单类型管理：全注意力 / 滑动窗口 / Mamba / 交叉注意力</span>
-</div>
+</a>
 <div class="fc-card fc-card-sm" data-layer="cache" markdown="1">
 <span class="fc-card-name">retention_interval</span>
 <span class="fc-card-desc">稀疏缓存保留策略</span>
@@ -349,18 +349,18 @@
 </div>
 
 <div class="fc-row" markdown="1">
-<div class="fc-card fc-card-sm" data-layer="pool" markdown="1">
+<a href="../api/block_pool/#blockhashtoblockmap" class="fc-card fc-card-sm" data-layer="pool" markdown="1">
 <span class="fc-card-name">BlockHashToBlockMap</span>
 <span class="fc-card-desc">哈希 → 块双向索引</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="pool" markdown="1">
+</a>
+<a href="../api/block_pool/" class="fc-card fc-card-sm" data-layer="pool" markdown="1">
 <span class="fc-card-name">FreeKVCacheBlockQueue</span>
 <span class="fc-card-desc">空闲块队列 O(1) 获取</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="pool" markdown="1">
+</a>
+<a href="../api/block_pool/#prefix-cache-maintenance" class="fc-card fc-card-sm" data-layer="pool" markdown="1">
 <span class="fc-card-name">cached_block_hash_to_block</span>
 <span class="fc-card-desc">前缀缓存块表 LRU 体系</span>
-</div>
+</a>
 <div class="fc-card fc-card-sm" data-layer="pool" markdown="1">
 <span class="fc-card-name">null_block</span>
 <span class="fc-card-desc">空块占位符</span>
@@ -373,18 +373,18 @@
 </div>
 
 <div class="fc-row" markdown="1">
-<div class="fc-card fc-card-sm" data-layer="pool" markdown="1">
+<a href="../api/block_pool/#evict-blocks" class="fc-card fc-card-sm" data-layer="pool" markdown="1">
 <span class="fc-card-name">evict_blocks()</span>
 <span class="fc-card-desc">LRU 驱逐：最久未用优先</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="pool" markdown="1">
+</a>
+<a href="../api/block_pool/#events-metrics" class="fc-card fc-card-sm" data-layer="pool" markdown="1">
 <span class="fc-card-name">KVCacheMetricsCollector</span>
 <span class="fc-card-desc">命中率 · 使用率 · 驱逐次数</span>
-</div>
-<div class="fc-card fc-card-sm" data-layer="pool" markdown="1">
+</a>
+<a href="../api/block_pool/#events-metrics" class="fc-card fc-card-sm" data-layer="pool" markdown="1">
 <span class="fc-card-name">KV Event Queue</span>
 <span class="fc-card-desc">事件驱动可观测</span>
-</div>
+</a>
 </div>
 
 </div>
@@ -402,15 +402,15 @@
 <div class="fc-v" markdown="1">
 
 <div class="fc-row" markdown="1">
-<div class="fc-card" data-layer="model" markdown="1">
+<a href="../api/model_runner/#model-runner" class="fc-card" data-layer="model" markdown="1">
 <span class="fc-card-name">ModelRunner</span>
 <span class="fc-card-desc">构建输入张量、执行前向传播、采样下一个 token</span>
-</div>
+</a>
 <span class="fc-arr-r"></span>
-<div class="fc-card" data-layer="model" markdown="1">
+<a href="../api/model_runner/#attention-backend" class="fc-card" data-layer="model" markdown="1">
 <span class="fc-card-name">Attention Backend</span>
 <span class="fc-card-desc">根据 slot_mapping 将 KV 值写入对应物理块位置</span>
-</div>
+</a>
 </div>
 
 <div class="fc-arr-group" markdown="1">
@@ -457,28 +457,28 @@
 <div class="fc-branch-col" markdown="1">
 <div class="fc-branch-label" markdown="1">无前缀缓存</div>
 <div class="fc-arr-group" markdown="1"><div class="fc-arr-d"></div></div>
-<div class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
+<a href="../api/kv_cache_coordinator/#no-prefix-cache" class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
 <span class="fc-card-name">NoPrefixCache</span>
 <span class="fc-card-desc">返回空列表, hit_len=0</span>
-</div>
+</a>
 </div>
 
 <div class="fc-branch-col" markdown="1">
 <div class="fc-branch-label" markdown="1">单缓存组</div>
 <div class="fc-arr-group" markdown="1"><div class="fc-arr-d"></div></div>
-<div class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
+<a href="../api/kv_cache_coordinator/#unitary" class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
 <span class="fc-card-name">Unitary</span>
 <span class="fc-card-desc">直接委托 SingleType 管理器</span>
-</div>
+</a>
 </div>
 
 <div class="fc-branch-col" markdown="1">
 <div class="fc-branch-label" markdown="1">混合多组</div>
 <div class="fc-arr-group" markdown="1"><div class="fc-arr-d"></div></div>
-<div class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
+<a href="../api/kv_cache_coordinator/#hybrid" class="fc-card fc-card-sm" data-layer="coordinator" markdown="1">
 <span class="fc-card-name">Hybrid</span>
 <span class="fc-card-desc">不动点迭代算法</span>
-</div>
+</a>
 </div>
 
 </div>

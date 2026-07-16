@@ -1,52 +1,51 @@
 /* ============================================================
-   KV Cache Architecture — Native Flowchart Design System
+   KV Cache Architecture — SVG Flowchart Design System
    ============================================================ */
 
 /* ---------- Variables ---------- */
 :root {
-  --fc-gap: 18px;
-  --fc-gap-sm: 10px;
-  --fc-radius: 12px;
-  --fc-radius-sm: 8px;
-  --fc-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  --fc-shadow-hover: 0 6px 20px rgba(0,0,0,0.12);
-  --fc-ease: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --fc-gap: 14px;
+  --fc-radius: 10px;
+  --fc-radius-sm: 7px;
+  --fc-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  --fc-shadow-hover: 0 4px 14px rgba(0,0,0,0.10);
+  --fc-ease: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 
-  --fc-engine-bg: #f0f7ff;   --fc-engine-accent: #1976d2;
-  --fc-sched-bg: #fff8f0;    --fc-sched-accent: #f57c00;
-  --fc-coord-bg: #f0faf9;    --fc-coord-accent: #00897b;
-  --fc-cache-bg: #f1f8f1;    --fc-cache-accent: #388e3c;
-  --fc-pool-bg:  #fff5f3;    --fc-pool-accent:  #e64a19;
-  --fc-model-bg: #f8f3fb;    --fc-model-accent: #7b1fa2;
+  --fc-engine-accent: #1976d2;
+  --fc-sched-accent:  #f57c00;
+  --fc-coord-accent:  #00897b;
+  --fc-cache-accent:  #388e3c;
+  --fc-pool-accent:   #e64a19;
+  --fc-model-accent:  #7b1fa2;
 
-  --fc-arrow-color: #b0bec5;
-  --fc-label-muted: #64748b;
-  --fc-card-bg: #fafbfc;
-  --fc-border: #e0e4e8;
+  --fc-arrow:    #b0bec5;
+  --fc-muted:    #64748b;
+  --fc-card-bg:  #fafbfc;
+  --fc-border:   #e0e4e8;
+
+  /* SVG arrow masks — vertical down */
+  --mask-arr-d: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 26'%3E%3Cline x1='8' y1='2' x2='8' y2='18' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpolygon points='3,12 8,22 13,12' fill='black'/%3E%3C/svg%3E");
+  /* horizontal right */
+  --mask-arr-r: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 16'%3E%3Cline x1='2' y1='8' x2='20' y2='8' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpolygon points='14,3 24,8 14,13' fill='black'/%3E%3C/svg%3E");
+  /* horizontal left */
+  --mask-arr-l: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 16'%3E%3Cline x1='24' y1='8' x2='6' y2='8' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpolygon points='12,3 2,8 12,13' fill='black'/%3E%3C/svg%3E");
 }
 
 [data-md-color-scheme="slate"] {
-  --fc-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  --fc-shadow-hover: 0 6px 20px rgba(0,0,0,0.5);
-  --fc-engine-bg: #1a2535; --fc-sched-bg: #221e18;
-  --fc-coord-bg: #182220;  --fc-cache-bg: #18201a;
-  --fc-pool-bg: #221a18;   --fc-model-bg: #1e1a24;
-  --fc-arrow-color: #3a4558;
-  --fc-label-muted: #8899aa;
+  --fc-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  --fc-shadow-hover: 0 4px 14px rgba(0,0,0,0.45);
+  --fc-arrow:   #4a5568;
+  --fc-muted:   #8899aa;
   --fc-card-bg: #1a1f2b;
-  --fc-border: #2d3548;
+  --fc-border:  #2d3548;
 }
 
 
 /* ============================================================
-   1. Flowchart Container
+   1. Container
    ============================================================ */
-.fc {
-  margin: 28px 0 40px;
-  padding: 0;
-}
+.fc { margin: 22px 0 36px; }
 
-/* Vertical flow: nodes stacked top-to-bottom */
 .fc-v {
   display: flex;
   flex-direction: column;
@@ -54,43 +53,23 @@
   gap: 0;
 }
 
-/* Horizontal row */
 .fc-row {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: var(--fc-gap-sm);
-  flex-wrap: wrap;
-}
-
-/* Split (two-column fork) */
-.fc-split {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  width: 100%;
-  max-width: 860px;
-  flex-wrap: wrap;
-}
-.fc-split-col {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0;
-  flex: 1;
-  min-width: 260px;
-  max-width: 420px;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 
 /* ============================================================
-   2. Flowchart Nodes (Cards)
+   2. Cards — compact, proportional
    ============================================================ */
 .fc-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 16px 22px;
+  gap: 2px;
+  padding: 10px 16px;
   border-radius: var(--fc-radius);
   background: var(--fc-card-bg);
   border: 1.5px solid var(--fc-border);
@@ -99,80 +78,73 @@
   color: inherit;
   cursor: default;
   transition: all var(--fc-ease);
-  text-align: left;
-  min-width: 200px;
-  max-width: 360px;
-  position: relative;
+  min-width: 150px;
+  max-width: 280px;
   scroll-margin-top: 80px;
 }
 
-a.fc-card {
-  cursor: pointer;
-}
+a.fc-card { cursor: pointer; }
 a.fc-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: var(--fc-shadow-hover);
 }
 
 .fc-card-name {
   font-weight: 700;
-  font-size: 0.95rem;
-  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 0.82rem;
+  font-family: "SF Mono","Fira Code","Consolas",monospace;
   letter-spacing: -0.01em;
+  line-height: 1.3;
   color: var(--md-default-fg-color, #222);
 }
-a.fc-card:hover .fc-card-name {
-  color: var(--md-primary-fg-color, #3f51b5);
-}
+a.fc-card:hover .fc-card-name { color: var(--md-primary-fg-color, #3f51b5); }
 
 .fc-card-desc {
-  font-size: 0.78rem;
-  color: var(--fc-label-muted);
-  line-height: 1.4;
+  font-size: 0.7rem;
+  color: var(--fc-muted);
+  line-height: 1.35;
 }
 
-/* Per-layer color accents (left border + hover border) */
-.fc-card[data-layer="engine"] { border-left: 4px solid var(--fc-engine-accent); }
-.fc-card[data-layer="engine"]:hover { border-color: var(--fc-engine-accent); }
-
-.fc-card[data-layer="scheduler"] { border-left: 4px solid var(--fc-sched-accent); }
-.fc-card[data-layer="scheduler"]:hover { border-color: var(--fc-sched-accent); }
-
-.fc-card[data-layer="coordinator"] { border-left: 4px solid var(--fc-coord-accent); }
-.fc-card[data-layer="coordinator"]:hover { border-color: var(--fc-coord-accent); }
-
-.fc-card[data-layer="cache"] { border-left: 4px solid var(--fc-cache-accent); }
+/* Per-layer left border */
+.fc-card[data-layer="engine"]      { border-left: 3px solid var(--fc-engine-accent); }
+.fc-card[data-layer="engine"]:hover{ border-color: var(--fc-engine-accent); }
+.fc-card[data-layer="scheduler"]   { border-left: 3px solid var(--fc-sched-accent); }
+.fc-card[data-layer="scheduler"]:hover{ border-color: var(--fc-sched-accent); }
+.fc-card[data-layer="coordinator"] { border-left: 3px solid var(--fc-coord-accent); }
+.fc-card[data-layer="coordinator"]:hover{ border-color: var(--fc-coord-accent); }
+.fc-card[data-layer="cache"]       { border-left: 3px solid var(--fc-cache-accent); }
 .fc-card[data-layer="cache"]:hover { border-color: var(--fc-cache-accent); }
-
-.fc-card[data-layer="pool"] { border-left: 4px solid var(--fc-pool-accent); }
-.fc-card[data-layer="pool"]:hover { border-color: var(--fc-pool-accent); }
-
-.fc-card[data-layer="model"] { border-left: 4px solid var(--fc-model-accent); }
+.fc-card[data-layer="pool"]        { border-left: 3px solid var(--fc-pool-accent); }
+.fc-card[data-layer="pool"]:hover  { border-color: var(--fc-pool-accent); }
+.fc-card[data-layer="model"]       { border-left: 3px solid var(--fc-model-accent); }
 .fc-card[data-layer="model"]:hover { border-color: var(--fc-model-accent); }
 
-/* Active state (scroll spy) */
+/* Active (scroll spy) */
 .fc-card.active {
   border-color: var(--md-primary-fg-color, #3f51b5) !important;
-  box-shadow: 0 0 0 3px rgba(63,81,181,0.2);
+  box-shadow: 0 0 0 2px rgba(63,81,181,0.18);
 }
 
-/* Decision node (diamond shape via clip-path) */
+/* Compact variant */
+.fc-card-sm { padding: 8px 12px; min-width: 120px; max-width: 200px; }
+.fc-card-sm .fc-card-name { font-size: 0.76rem; }
+.fc-card-sm .fc-card-desc { font-size: 0.66rem; }
+
+/* Decision node */
 .fc-decision {
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 18px 26px;
-  min-width: 160px;
-  min-height: 56px;
+  padding: 10px 20px;
+  min-width: 140px;
   background: #fffde7;
   border: 2px solid #f9a825;
-  border-radius: 4px;
+  border-radius: 6px;
   box-shadow: var(--fc-shadow);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   color: #f57f17;
-  position: relative;
 }
 [data-md-color-scheme="slate"] .fc-decision {
   background: #2a2610;
@@ -180,12 +152,20 @@ a.fc-card:hover .fc-card-name {
   color: #ffd54f;
 }
 
-/* Terminal node (rounded) */
+/* Terminal (start/end) */
 .fc-end {
-  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px 22px;
+  min-width: 140px;
+  border-radius: 22px;
   background: #e8f5e9;
   border: 2px solid #66bb6a;
+  box-shadow: var(--fc-shadow);
   font-weight: 600;
+  font-size: 0.82rem;
   color: #2e7d32;
 }
 [data-md-color-scheme="slate"] .fc-end {
@@ -194,133 +174,89 @@ a.fc-card:hover .fc-card-name {
   color: #81c784;
 }
 
-/* Compact variant */
-.fc-card-sm {
-  padding: 10px 16px;
-  min-width: 140px;
-  max-width: 240px;
-}
-.fc-card-sm .fc-card-name { font-size: 0.82rem; }
-.fc-card-sm .fc-card-desc { font-size: 0.72rem; }
-
-/* Header card (section title within flowchart) */
-.fc-header {
-  padding: 10px 20px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-align: center;
-  border-radius: var(--fc-radius-sm);
-  min-width: 200px;
-}
-
 
 /* ============================================================
-   3. Arrows & Connectors
+   3. SVG Arrows — mask-based, themeable via background-color
    ============================================================ */
-/* Vertical arrow: downward connector between stacked nodes */
+.fc-arr-d, .fc-arr-r, .fc-arr-l {
+  flex-shrink: 0;
+  background-color: var(--fc-arrow);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
 .fc-arr-d {
+  width: 18px; height: 28px;
+  margin: 0 auto;
+  mask-image: var(--mask-arr-d);
+  -webkit-mask-image: var(--mask-arr-d);
+}
+
+.fc-arr-r {
+  width: 30px; height: 18px;
+  mask-image: var(--mask-arr-r);
+  -webkit-mask-image: var(--mask-arr-r);
+}
+
+.fc-arr-l {
+  width: 30px; height: 18px;
+  mask-image: var(--mask-arr-l);
+  -webkit-mask-image: var(--mask-arr-l);
+}
+
+/* Arrow + label combo (replaces fc-arr-group) */
+.fc-step {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4px 0;
-  color: var(--fc-arrow-color);
-}
-.fc-arr-d::before {
-  content: "";
-  width: 2px;
-  height: 18px;
-  background: var(--fc-arrow-color);
-}
-.fc-arr-d::after {
-  content: "";
-  width: 0; height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 8px solid var(--fc-arrow-color);
+  gap: 2px;
+  padding: 2px 0;
 }
 
-/* Vertical arrow with label */
-.fc-arr-label {
-  font-size: 0.78rem;
-  color: var(--fc-label-muted);
-  padding: 3px 10px;
-  max-width: 420px;
+.fc-step-label {
+  font-size: 0.74rem;
+  color: var(--fc-muted);
   text-align: center;
-  line-height: 1.4;
+  line-height: 1.35;
+  max-width: 400px;
+  padding: 0 8px;
 }
-.fc-arr-label code {
-  font-size: 0.85em;
-  padding: 1px 5px;
+.fc-step-label code {
+  font-size: 0.88em;
+  padding: 1px 4px;
   border-radius: 3px;
   background: var(--fc-card-bg);
   border: 0.5px solid var(--fc-border);
 }
 
-/* Horizontal arrow between side-by-side nodes */
-.fc-arr-r {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  color: var(--fc-arrow-color);
-  padding: 0 2px;
-}
-.fc-arr-r::before {
-  content: "";
-  width: 16px;
-  height: 2px;
-  background: var(--fc-arrow-color);
-}
-.fc-arr-r::after {
-  content: "";
-  width: 0; height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 7px solid var(--fc-arrow-color);
-}
-
-/* Dashed arrow */
-.fc-arr-dash::before { background: repeating-linear-gradient(90deg, var(--fc-arrow-color) 0 4px, transparent 4px 8px); }
-
-/* Left arrow */
-.fc-arr-l {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  color: var(--fc-arrow-color);
-  padding: 0 2px;
-}
-.fc-arr-l::after {
-  content: "";
-  width: 16px;
-  height: 2px;
-  background: var(--fc-arrow-color);
-}
-.fc-arr-l::before {
-  content: "";
-  width: 0; height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-right: 7px solid var(--fc-arrow-color);
-}
-
-/* Arrow group (arrow + label in column) */
-.fc-arr-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
 
 /* ============================================================
-   4. Branching Connectors (decision → two paths)
+   4. Branch (decision → multiple paths)
    ============================================================ */
 .fc-branch {
   display: flex;
   justify-content: center;
-  gap: 32px;
+  gap: 16px;
   width: 100%;
-  max-width: 600px;
+  max-width: 660px;
+  padding-top: 22px;
+  position: relative;
+}
+
+/* Horizontal spreader line */
+.fc-branch::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14%;
+  right: 14%;
+  height: 1.8px;
+  background: var(--fc-arrow);
+  border-radius: 1px;
 }
 
 .fc-branch-col {
@@ -329,59 +265,88 @@ a.fc-card:hover .fc-card-name {
   align-items: center;
   gap: 0;
   flex: 1;
+  min-width: 0;
 }
 
+/* Branch label above each column */
 .fc-branch-label {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: var(--fc-label-muted);
-  padding: 2px 8px;
+  color: var(--fc-muted);
+  padding: 2px 6px;
+  text-align: center;
 }
 
 
 /* ============================================================
-   5. Page Layout
+   5. Split (fork — two parallel paths)
+   ============================================================ */
+.fc-split {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  width: 100%;
+  max-width: 700px;
+  flex-wrap: wrap;
+}
+
+.fc-split-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+  min-width: 220px;
+  max-width: 360px;
+}
+
+
+/* ============================================================
+   6. Page Layout
    ============================================================ */
 .arch-section {
-  margin: 48px 0 32px;
+  margin: 44px 0 28px;
   scroll-margin-top: 80px;
 }
-
 .arch-section h2 {
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   font-weight: 700;
-  padding-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 2px solid var(--fc-border);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
-
 .arch-section-desc {
-  color: var(--fc-label-muted);
-  font-size: 0.9rem;
-  margin-bottom: 8px;
-  line-height: 1.6;
+  color: var(--fc-muted);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  line-height: 1.55;
+}
+.arch-overview-subtitle {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--fc-muted);
+  margin-bottom: 16px;
 }
 
 
 /* ============================================================
-   6. Expandable Details (explanations)
+   7. Expandable Details
    ============================================================ */
 .fc-details {
   margin-top: var(--fc-gap);
   border: 1.5px solid var(--fc-border);
   border-radius: var(--fc-radius-sm);
   overflow: hidden;
-  max-width: 760px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 640px;
+  margin-left: auto; margin-right: auto;
 }
 .fc-details summary {
-  padding: 10px 16px;
+  padding: 9px 16px;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   cursor: pointer;
   background: var(--fc-card-bg);
-  color: var(--fc-label-muted);
+  color: var(--fc-muted);
   list-style: none;
 }
 .fc-details summary::-webkit-details-marker { display: none; }
@@ -393,44 +358,32 @@ a.fc-card:hover .fc-card-name {
 }
 .fc-details[open] summary::before { transform: rotate(90deg); }
 .fc-details-body {
-  padding: 14px 18px;
-  font-size: 0.88rem;
-  line-height: 1.7;
-}
-.fc-details-body ol, .fc-details-body ul { padding-left: 20px; margin: 6px 0; }
-.fc-details-body li { margin-bottom: 4px; }
-
-
-/* ============================================================
-   7. Section Navigation (Overview → Detail)
-   ============================================================ */
-.arch-overview-title {
-  text-align: center;
-  margin-bottom: 6px;
-}
-.arch-overview-subtitle {
-  text-align: center;
+  padding: 12px 18px;
   font-size: 0.85rem;
-  color: var(--fc-label-muted);
-  margin-bottom: 20px;
+  line-height: 1.65;
 }
+.fc-details-body ol, .fc-details-body ul { padding-left: 20px; margin: 4px 0; }
+.fc-details-body li { margin-bottom: 3px; }
 
 
 /* ============================================================
    8. Responsive
    ============================================================ */
 @media (max-width: 768px) {
-  .fc-card { min-width: 150px; max-width: 280px; padding: 12px 16px; }
-  .fc-card-name { font-size: 0.85rem; }
-  .fc-card-desc { font-size: 0.72rem; }
-  .fc-split { gap: 20px; }
-  .fc-split-col { min-width: 200px; }
-  .fc-branch { gap: 16px; flex-direction: column; align-items: center; }
-  .fc-arr-label { font-size: 0.72rem; max-width: 90%; }
+  .fc-card { min-width: 120px; max-width: 220px; padding: 8px 12px; }
+  .fc-card-name { font-size: 0.76rem; }
+  .fc-card-desc { font-size: 0.66rem; }
+  .fc-split { gap: 16px; }
+  .fc-split-col { min-width: 180px; }
+  .fc-branch { gap: 10px; }
+  .fc-branch::before { left: 10%; right: 10%; }
+  .fc-step-label { font-size: 0.7rem; }
 }
 
 @media (max-width: 480px) {
-  .arch-section h2 { font-size: 1.1rem; }
-  .fc-card { min-width: 120px; max-width: 220px; }
+  .fc-card { min-width: 100px; max-width: 180px; }
   .fc-split { flex-direction: column; align-items: center; }
+  .fc-branch { flex-direction: column; align-items: center; gap: 6px; padding-top: 0; }
+  .fc-branch::before { display: none; }
+  .fc-branch-col { flex-direction: row; gap: 8px; }
 }

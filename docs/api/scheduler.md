@@ -64,7 +64,7 @@ class Scheduler(SchedulerInterface):
 
 ---
 
-## 二、核心调度方法：`schedule()`
+## 二、核心调度方法：`schedule()` {#schedule}
 
 ```python
 def schedule(self, throttle_prefills: bool = False) -> SchedulerOutput:
@@ -153,7 +153,7 @@ if new_blocks is None:
     self._preempt_request(request, timestamp)
 ```
 
-### 2. 抢占机制
+### 2. 抢占机制 {#preemption}
 
 ```python
 def _preempt_request(self, request: Request, timestamp: float) -> None:
@@ -268,7 +268,7 @@ def reset_encoder_cache(self) -> None:
 
 ---
 
-## 六、推测解码支持
+## 六、推测解码支持 {#spec-decode}
 
 ```python
 def update_draft_token_ids(self, draft_token_ids: DraftTokenIds) -> None:
@@ -290,7 +290,7 @@ def update_draft_token_ids_in_output(
 
 ---
 
-## 七、分布式 KV 连接器集成
+## 七、分布式 KV 连接器集成 {#kv-connector}
 
 ```python
 def get_kv_connector(self) -> KVConnectorBase_V1 | None:

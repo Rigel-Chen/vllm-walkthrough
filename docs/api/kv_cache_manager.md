@@ -6,7 +6,7 @@
 
 ---
 
-# `KVCacheBlocks` 缓存块数据结构
+# `KVCacheBlocks` 缓存块数据结构 {#kvcacheblocks}
 
 `KVCacheBlocks` 是 `KVCacheManager` 的分配结果对象，作为调度器与缓存管理器之间的接口层，隐藏 `KVCacheManager` 内部数据结构的细节。外层元组对应不同的 KV 缓存组，内层序列对应每组中的物理块。
 
