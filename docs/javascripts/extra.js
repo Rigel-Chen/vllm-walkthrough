@@ -1,10 +1,10 @@
 // ============================================================
-//  Mermaid 节点点击详情卡（事件委托版）
-//  点击节点 → 弹出详情卡片，展示完整说明 + API 链接
+//  KV Cache Architecture Page — Interactive Features
 // ============================================================
 
-// ---------- 节点详情数据 ----------
-// key: 节点标题归一化（只匹配第一行文字）
+// ============================================================
+//  1. Node Detail Card (Mermaid click handler)
+// ============================================================
 const nodeDetails = {
   'llmengine.generate': {
     title: 'LLMEngine.generate',
@@ -147,45 +147,36 @@ const nodeDetails = {
   }
 };
 
-// ---------- 工具函数 ----------
+// ---------- Detail card helpers ----------
 function normalizeLabel(text) {
   return text.replace(/[\s\n\r]+/g, '').toLowerCase().trim();
 }
 
-// 从事件目标向上找到最近的 g.node
 function findNodeEl(target) {
   let el = target;
   while (el && el !== document) {
-    if (el.classList && el.classList.contains('node')) {
-      return el;
-    }
+    if (el.classList && el.classList.contains('node')) return el;
     el = el.parentNode;
   }
   return null;
 }
 
-// 提取节点第一行文本（标题行，用于匹配 key）
 function getNodeFirstLine(nodeEl) {
   const textEl = nodeEl.querySelector('text');
   if (!textEl) return '';
   const tspans = textEl.querySelectorAll('tspan');
-  if (tspans.length > 0) {
-    return tspans[0].textContent || '';
-  }
+  if (tspans.length > 0) return tspans[0].textContent || '';
   return textEl.textContent || '';
 }
 
-// ---------- 详情卡 DOM 构建 ----------
+// ---------- Detail card DOM ----------
 let overlay, card;
 
 function ensureDetailCard() {
   if (card) return;
-
-  // 遮罩
   overlay = document.createElement('div');
   overlay.className = 'detail-overlay';
 
-  // 卡片
   card = document.createElement('div');
   card.className = 'detail-card';
   card.innerHTML = `
@@ -203,25 +194,19 @@ function ensureDetailCard() {
   document.body.appendChild(overlay);
   document.body.appendChild(card);
 
-  // 关闭事件
   overlay.addEventListener('click', closeDetail);
   card.querySelector('.detail-card-close').addEventListener('click', closeDetail);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && card.classList.contains('visible')) {
-      closeDetail();
-    }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && card.classList.contains('visible')) closeDetail();
   });
 }
 
 function openDetail(data) {
   ensureDetailCard();
-
   card.querySelector('.detail-card-title').textContent = data.title;
   card.querySelector('.detail-card-subtitle').textContent = data.subtitle;
-
   const body = card.querySelector('.detail-card-body');
-  body.innerHTML = data.description.map(p => `<p>${p}</p>`).join('');
-
+  body.innerHTML = data.description.map(function(p) { return '<p>' + p + '</p>'; }).join('');
   const linkEl = card.querySelector('.detail-card-link');
   if (data.link) {
     linkEl.href = data.link;
@@ -229,7 +214,6 @@ function openDetail(data) {
   } else {
     linkEl.classList.add('no-link');
   }
-
   overlay.classList.add('visible');
   card.classList.add('visible');
 }
@@ -239,16 +223,13 @@ function closeDetail() {
   if (card) card.classList.remove('visible');
 }
 
-// ---------- 事件委托：点击节点 ----------
 function initClickHandler() {
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', function(e) {
     const nodeEl = findNodeEl(e.target);
     if (!nodeEl) return;
-
     const firstLine = getNodeFirstLine(nodeEl);
     const key = normalizeLabel(firstLine);
     const data = nodeDetails[key];
-
     if (data) {
       e.preventDefault();
       e.stopPropagation();
@@ -257,18 +238,91 @@ function initClickHandler() {
   });
 }
 
-// ---------- 启动 ----------
+
+// ============================================================
+//  2. Architecture Explorer — Section 二 interactive cards
+// ============================================================
+function initArchExplorer() {
+  var explorer = document.querySelector('.arch-explorer');
+  if (!explorer) return;
+
+  // Collect all layers
+  var layers = explorer.querySelectorAll('.arch-layer');
+  if (layers.length === 0) return;
+
+  // Click handler: toggle individual layer
+  explorer.addEventListener('click', function(e) {
+    var header = e.target.closest('.arch-layer-header');
+    if (!header) return;
+    var layer = header.closest('.arch-layer');
+    if (!layer) return;
+    toggleLayer(layer);
+  });
+
+  // Keyboard: Enter / Space on header
+  explorer.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      var header = e.target.closest('.arch-layer-header');
+      if (!header) return;
+      e.preventDefault();
+      var layer = header.closest('.arch-layer');
+      if (layer) toggleLayer(layer);
+    }
+  });
+
+  // Expand all / Collapse all buttons
+  var btnExpandAll = explorer.querySelector('.arch-btn-expand-all');
+  var btnCollapseAll = explorer.querySelector('.arch-btn-collapse-all');
+
+  if (btnExpandAll) {
+    btnExpandAll.addEventListener('click', function() {
+      layers.forEach(function(l) { openLayer(l); });
+    });
+  }
+  if (btnCollapseAll) {
+    btnCollapseAll.addEventListener('click', function() {
+      layers.forEach(function(l) { closeLayer(l); });
+    });
+  }
+}
+
+function toggleLayer(layer) {
+  if (layer.getAttribute('data-open') === 'true') {
+    closeLayer(layer);
+  } else {
+    openLayer(layer);
+  }
+}
+
+function openLayer(layer) {
+  layer.setAttribute('data-open', 'true');
+  var header = layer.querySelector('.arch-layer-header');
+  if (header) header.setAttribute('aria-expanded', 'true');
+  var body = layer.querySelector('.arch-layer-body');
+  if (body) body.removeAttribute('hidden');
+}
+
+function closeLayer(layer) {
+  layer.setAttribute('data-open', 'false');
+  var header = layer.querySelector('.arch-layer-header');
+  if (header) header.setAttribute('aria-expanded', 'false');
+  var body = layer.querySelector('.arch-layer-body');
+  if (body) body.setAttribute('hidden', '');
+}
+
+
+// ============================================================
+//  3. Bootstrap
+// ============================================================
 function init() {
   initClickHandler();
+  initArchExplorer();
 }
 
 if (typeof document$ !== 'undefined' && document$.subscribe) {
-  let initialized = false;
-  document$.subscribe(() => {
-    if (!initialized) {
-      init();
-      initialized = true;
-    }
+  var initialized = false;
+  document$.subscribe(function() {
+    if (!initialized) { init(); initialized = true; }
   });
 } else {
   if (document.readyState === 'loading') {

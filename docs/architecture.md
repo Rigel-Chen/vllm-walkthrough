@@ -4,9 +4,17 @@
 
 ---
 
+<div class="arch-section" markdown="1">
+
 ## 一、核心调用链路简图
 
+<div class="arch-section-desc" markdown="1">
 精简展示 KV Cache 从请求进入到物理缓存的主干调用路径，快速把握六层架构。
+</div>
+
+<div class="arch-diagram" markdown="1">
+<div class="arch-diagram-header">📐 六层主干链路 · 从上到下依次为引擎入口 → 调度决策 → 缓存协调 → 缓存管理 → 物理块池 → 模型执行</div>
+<div class="arch-diagram-body" markdown="1">
 
 ```mermaid
 flowchart TD
@@ -37,139 +45,441 @@ flowchart TD
     class H,I l6
 ```
 
----
+</div>
+</div>
 
-## 二、完整分层组件详图
-
-横向布局展示所有核心组件与依赖关系，**图较宽可横向滚动查看**。
-
-??? note "点击展开完整组件详图"
-    ```mermaid
-    flowchart LR
-        %% ========== 引擎入口层 ==========
-        subgraph Engine["🧱 引擎入口层"]
-            direction TB
-            LLMEngine["LLMEngine<br><small>对外兼容封装</small>"]
-            EngineCore["EngineCoreClient<br><small>核心引擎客户端</small>"]
-            InputProc["InputProcessor<br><small>输入预处理</small>"]
-            OutputProc["OutputProcessor<br><small>输出后处理</small>"]
-        end
-
-        %% ========== 调度决策层 ==========
-        subgraph SchedulerLayer["⚙️ 调度决策层"]
-            direction TB
-            Scheduler["Scheduler.schedule()<br><small>统一 token 预算调度</small>"]
-            WaitQueue["waiting / skipped_waiting<br><small>等待队列</small>"]
-            RunQueue["running<br><small>运行队列</small>"]
-            Preempt["_preempt_request()<br><small>抢占机制</small>"]
-            SpecDecode["推测解码支持<br><small>EAGLE / Draft / DFlash</small>"]
-            KVConnector["KVConnector<br><small>分布式 KV 传输</small>"]
-            EncCacheMgr["EncoderCacheManager<br><small>编码器缓存</small>"]
-        end
-
-        %% ========== 缓存协调层 ==========
-        subgraph CoordLayer["🔀 缓存协调层"]
-            direction TB
-            CoordBase["KVCacheCoordinator (ABC)<br><small>协调器抽象基类</small>"]
-            CoordNoCache["NoPrefixCache<br><small>无前缀缓存</small>"]
-            CoordUnitary["Unitary<br><small>单缓存组</small>"]
-            CoordHybrid["Hybrid<br><small>混合多缓存组</small>"]
-            Factory["get_kv_cache_coordinator()<br><small>工厂函数</small>"]
-            SpecGroup["SpecGroup<br><small>规格分组单元</small>"]
-        end
-
-        %% ========== 缓存管理层 ==========
-        subgraph CacheLayer["📦 缓存管理层"]
-            direction TB
-            KVCacheMgr["KVCacheManager<br><small>统一缓存管理器</small>"]
-            KVCacheBlocks["KVCacheBlocks<br><small>缓存块数据结构</small>"]
-            SingleMgr["SingleTypeKVCacheManager × N<br><small>全注意力 / 滑动窗口<br>Mamba / 交叉注意力</small>"]
-            PrefixHit["find_longest_cache_hit()<br><small>前缀命中查找</small>"]
-            AllocSlots["allocate_slots()<br><small>槽位分配核心</small>"]
-            FreeBlocks["free / pop_blocks_for_free<br><small>块释放接口</small>"]
-            Retention["retention_interval<br><small>稀疏缓存保留</small>"]
-        end
-
-        %% ========== 物理块池层 ==========
-        subgraph PoolLayer["💾 物理块池层"]
-            direction TB
-            BlockPool["BlockPool<br><small>全局物理块池</small>"]
-            HashMap["BlockHashToBlockMap<br><small>哈希→块双向索引</small>"]
-            FreeQueue["FreeKVCacheBlockQueue<br><small>空闲块队列</small>"]
-            CachedBlocks["cached_block_hash_to_block<br><small>前缀缓存块表</small>"]
-            Evict["evict_blocks()<br><small>LRU 驱逐策略</small>"]
-            NullBlock["null_block<br><small>空块占位符</small>"]
-            Events["KV Event Queue<br><small>事件驱动可观测</small>"]
-            Metrics["KVCacheMetricsCollector<br><small>指标收集器</small>"]
-        end
-
-        %% ========== 模型执行层 ==========
-        subgraph ModelLayer["🚀 模型执行层"]
-            direction TB
-            ModelRunner["ModelRunner<br><small>模型执行器</small>"]
-            Attention["Attention Backend<br><small>写入物理 KV 缓存</small>"]
-        end
-
-        %% ===== 调用关系 =====
-        LLMEngine --> EngineCore
-        InputProc -.-> EngineCore
-        EngineCore --> Scheduler
-        Scheduler --> WaitQueue
-        Scheduler --> RunQueue
-        Scheduler --> Preempt
-        Scheduler --> SpecDecode
-        Scheduler --> KVConnector
-        Scheduler --> EncCacheMgr
-
-        Scheduler -->|"调用缓存分配"| KVCacheMgr
-        KVCacheMgr --> CoordBase
-        Factory -->|"创建"| CoordBase
-        CoordBase --> CoordNoCache
-        CoordBase --> CoordUnitary
-        CoordBase --> CoordHybrid
-        CoordHybrid --> SpecGroup
-
-        CoordBase --> SingleMgr
-        KVCacheMgr --> KVCacheBlocks
-        KVCacheMgr --> PrefixHit
-        KVCacheMgr --> AllocSlots
-        KVCacheMgr --> FreeBlocks
-        KVCacheMgr --> Retention
-
-        SingleMgr --> BlockPool
-        BlockPool --> HashMap
-        BlockPool --> FreeQueue
-        BlockPool --> CachedBlocks
-        BlockPool --> Evict
-        BlockPool --> NullBlock
-        BlockPool --> Events
-        BlockPool --> Metrics
-
-        Scheduler --> ModelRunner
-        ModelRunner --> Attention
-        BlockPool -.->|"物理块被读写"| Attention
-
-        %% 样式
-        classDef engine fill:#e1f5fe,stroke:#0288d1,color:#01579b
-        classDef sched fill:#fff3e0,stroke:#f57c00,color:#e65100
-        classDef coord fill:#e0f2f1,stroke:#00897b,color:#004d40
-        classDef cache fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
-        classDef pool fill:#fbe9e7,stroke:#e64a19,color:#bf360c
-        classDef model fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c
-
-        class LLMEngine,EngineCore,InputProc,OutputProc engine
-        class Scheduler,WaitQueue,RunQueue,Preempt,SpecDecode,KVConnector,EncCacheMgr sched
-        class CoordBase,CoordNoCache,CoordUnitary,CoordHybrid,Factory,SpecGroup coord
-        class KVCacheMgr,KVCacheBlocks,SingleMgr,PrefixHit,AllocSlots,FreeBlocks,Retention cache
-        class BlockPool,HashMap,FreeQueue,CachedBlocks,Evict,NullBlock,Events,Metrics pool
-        class ModelRunner,Attention model
-    ```
+</div>
 
 ---
+
+<div class="arch-section" markdown="1">
+
+## 二、分层组件架构浏览器
+
+<div class="arch-section-desc" markdown="1">
+点击每层卡片展开查看该层的全部组件、职责说明以及上下游调用关系。支持逐层展开或一键全部展开/收起。
+</div>
+
+<!-- ═══════════════ Architecture Explorer ═══════════════ -->
+<div class="arch-explorer" markdown="1">
+
+<div class="arch-controls" markdown="1">
+<button class="arch-btn-expand-all" markdown="1">📂 全部展开</button>
+<button class="arch-btn-collapse-all" markdown="1">📁 全部收起</button>
+</div>
+
+<!-- ─── Layer 1: Engine ─── -->
+<div class="arch-layer" data-layer="engine" data-open="false" markdown="1">
+<button class="arch-layer-header" aria-expanded="false" markdown="1">
+<span class="arch-layer-icon" markdown="1">🧱</span>
+<span class="arch-layer-info" markdown="1">
+<span class="arch-layer-title" markdown="1">引擎入口层</span>
+<span class="arch-layer-subtitle" markdown="1">LLMEngine · EngineCoreClient · InputProcessor · OutputProcessor</span>
+</span>
+<span class="arch-layer-chevron" markdown="1">▸</span>
+</button>
+<div class="arch-layer-body" hidden markdown="1">
+<div class="arch-layer-body-inner" markdown="1">
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔧 组件</div>
+<div class="arch-components" markdown="1">
+
+<a href="../api/llm_engine/" class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">LLMEngine</span>
+<span class="arch-comp-desc" markdown="1">对外兼容封装，接收用户请求并驱动整个生成流程</span>
+</a>
+
+<a href="../api/llm_engine/" class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">EngineCoreClient</span>
+<span class="arch-comp-desc" markdown="1">核心引擎客户端，将请求注册到引擎核心</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">InputProcessor</span>
+<span class="arch-comp-desc" markdown="1">输入预处理：tokenize、prompt 格式化</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">OutputProcessor</span>
+<span class="arch-comp-desc" markdown="1">输出后处理：detokenize、streaming 封装</span>
+</a>
+
+</div>
+</div>
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔗 下游调用</div>
+<div class="arch-connections" markdown="1">
+<div class="arch-conn-down" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↓</span>
+<span class="arch-conn-label" markdown="1">将请求交付 <code>Scheduler.schedule()</code> 进行调度决策</span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- ─── Layer 2: Scheduler ─── -->
+<div class="arch-layer" data-layer="scheduler" data-open="false" markdown="1">
+<button class="arch-layer-header" aria-expanded="false" markdown="1">
+<span class="arch-layer-icon" markdown="1">⚙️</span>
+<span class="arch-layer-info" markdown="1">
+<span class="arch-layer-title" markdown="1">调度决策层</span>
+<span class="arch-layer-subtitle" markdown="1">Scheduler · 等待/运行队列 · 抢占 · 推测解码 · KVConnector</span>
+</span>
+<span class="arch-layer-chevron" markdown="1">▸</span>
+</button>
+<div class="arch-layer-body" hidden markdown="1">
+<div class="arch-layer-body-inner" markdown="1">
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔧 组件</div>
+<div class="arch-components" markdown="1">
+
+<a href="../api/scheduler/" class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">Scheduler.schedule()</span>
+<span class="arch-comp-desc" markdown="1">统一 token 预算调度，决定每步执行哪些请求</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">waiting / skipped_waiting</span>
+<span class="arch-comp-desc" markdown="1">等待队列：缓存不足时挂起请求</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">running</span>
+<span class="arch-comp-desc" markdown="1">运行队列：已分配缓存、正在执行的请求</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">_preempt_request()</span>
+<span class="arch-comp-desc" markdown="1">抢占机制：回收低优先级请求的缓存</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">推测解码支持</span>
+<span class="arch-comp-desc" markdown="1">EAGLE / Draft / DFlash 多模式</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">KVConnector</span>
+<span class="arch-comp-desc" markdown="1">分布式 KV 传输，跨节点缓存同步</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">EncoderCacheManager</span>
+<span class="arch-comp-desc" markdown="1">多模态编码器缓存管理</span>
+</a>
+
+</div>
+</div>
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔗 上下游</div>
+<div class="arch-connections" markdown="1">
+<div class="arch-conn-up" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↑</span>
+<span class="arch-conn-label" markdown="1">由 <code>EngineCore</code> 调用</span>
+</div>
+<div class="arch-conn-down" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↓</span>
+<span class="arch-conn-label" markdown="1">调用 <code>KVCacheManager</code> 分配缓存；调用 <code>ModelRunner</code> 执行推理</span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- ─── Layer 3: Coordinator ─── -->
+<div class="arch-layer" data-layer="coordinator" data-open="false" markdown="1">
+<button class="arch-layer-header" aria-expanded="false" markdown="1">
+<span class="arch-layer-icon" markdown="1">🔀</span>
+<span class="arch-layer-info" markdown="1">
+<span class="arch-layer-title" markdown="1">缓存协调层</span>
+<span class="arch-layer-subtitle" markdown="1">KVCacheCoordinator (ABC) · NoPrefixCache · Unitary · Hybrid · SpecGroup</span>
+</span>
+<span class="arch-layer-chevron" markdown="1">▸</span>
+</button>
+<div class="arch-layer-body" hidden markdown="1">
+<div class="arch-layer-body-inner" markdown="1">
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔧 组件</div>
+<div class="arch-components" markdown="1">
+
+<a href="../api/kv_cache_coordinator/" class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">KVCacheCoordinator (ABC)</span>
+<span class="arch-comp-desc" markdown="1">协调器抽象基类，定义统一接口</span>
+</a>
+
+<a href="../api/kv_cache_coordinator/" class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">NoPrefixCache</span>
+<span class="arch-comp-desc" markdown="1">无前缀缓存模式，每次全量分配</span>
+</a>
+
+<a href="../api/kv_cache_coordinator/" class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">Unitary</span>
+<span class="arch-comp-desc" markdown="1">单缓存组，一种注意力类型</span>
+</a>
+
+<a href="../api/kv_cache_coordinator/" class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">Hybrid</span>
+<span class="arch-comp-desc" markdown="1">混合多缓存组，不动点迭代协调</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">get_kv_cache_coordinator()</span>
+<span class="arch-comp-desc" markdown="1">工厂函数，按模型配置创建协调器</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">SpecGroup</span>
+<span class="arch-comp-desc" markdown="1">规格分组单元，按块大小分组管理</span>
+</a>
+
+</div>
+</div>
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔗 上下游</div>
+<div class="arch-connections" markdown="1">
+<div class="arch-conn-up" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↑</span>
+<span class="arch-conn-label" markdown="1">由 <code>KVCacheManager</code> 调用，通过工厂函数创建</span>
+</div>
+<div class="arch-conn-down" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↓</span>
+<span class="arch-conn-label" markdown="1">委托 <code>SingleTypeKVCacheManager × N</code> 执行各类型缓存操作</span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- ─── Layer 4: Cache Manager ─── -->
+<div class="arch-layer" data-layer="cache" data-open="false" markdown="1">
+<button class="arch-layer-header" aria-expanded="false" markdown="1">
+<span class="arch-layer-icon" markdown="1">📦</span>
+<span class="arch-layer-info" markdown="1">
+<span class="arch-layer-title" markdown="1">缓存管理层</span>
+<span class="arch-layer-subtitle" markdown="1">KVCacheManager · KVCacheBlocks · SingleTypeKVCacheManager · allocate_slots</span>
+</span>
+<span class="arch-layer-chevron" markdown="1">▸</span>
+</button>
+<div class="arch-layer-body" hidden markdown="1">
+<div class="arch-layer-body-inner" markdown="1">
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔧 组件</div>
+<div class="arch-components" markdown="1">
+
+<a href="../api/kv_cache_manager/" class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">KVCacheManager</span>
+<span class="arch-comp-desc" markdown="1">统一缓存管理器入口，对外暴露 allocate / free</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">KVCacheBlocks</span>
+<span class="arch-comp-desc" markdown="1">缓存块数据结构，按组组织块列表</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">SingleTypeKVCacheManager</span>
+<span class="arch-comp-desc" markdown="1">单类型缓存管理：全注意力 / 滑动窗口 / Mamba / 交叉注意力</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">find_longest_cache_hit()</span>
+<span class="arch-comp-desc" markdown="1">前缀命中查找，复用已计算 KV 块</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">allocate_slots()</span>
+<span class="arch-comp-desc" markdown="1">槽位分配核心：命中块复用 + 新块分配</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">free / pop_blocks_for_free</span>
+<span class="arch-comp-desc" markdown="1">块释放接口，支持立即释放与延迟释放</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">retention_interval</span>
+<span class="arch-comp-desc" markdown="1">稀疏缓存保留策略</span>
+</a>
+
+</div>
+</div>
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔗 上下游</div>
+<div class="arch-connections" markdown="1">
+<div class="arch-conn-up" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↑</span>
+<span class="arch-conn-label" markdown="1">由 <code>Scheduler</code> 调用，入口为 <code>allocate_slots()</code></span>
+</div>
+<div class="arch-conn-down" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↓</span>
+<span class="arch-conn-label" markdown="1">向下委托 <code>KVCacheCoordinator</code> 协调多类型；最终操作 <code>BlockPool</code></span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- ─── Layer 5: Block Pool ─── -->
+<div class="arch-layer" data-layer="pool" data-open="false" markdown="1">
+<button class="arch-layer-header" aria-expanded="false" markdown="1">
+<span class="arch-layer-icon" markdown="1">💾</span>
+<span class="arch-layer-info" markdown="1">
+<span class="arch-layer-title" markdown="1">物理块池层</span>
+<span class="arch-layer-subtitle" markdown="1">BlockPool · BlockHashToBlockMap · FreeQueue · evict_blocks · 指标收集</span>
+</span>
+<span class="arch-layer-chevron" markdown="1">▸</span>
+</button>
+<div class="arch-layer-body" hidden markdown="1">
+<div class="arch-layer-body-inner" markdown="1">
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔧 组件</div>
+<div class="arch-components" markdown="1">
+
+<a href="../api/block_pool/" class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">BlockPool</span>
+<span class="arch-comp-desc" markdown="1">全局物理块池：分配、释放、驱逐、前缀缓存</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">BlockHashToBlockMap</span>
+<span class="arch-comp-desc" markdown="1">哈希 → 块 双向索引，加速前缀命中查找</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">FreeKVCacheBlockQueue</span>
+<span class="arch-comp-desc" markdown="1">空闲块队列，O(1) 获取与归还</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">cached_block_hash_to_block</span>
+<span class="arch-comp-desc" markdown="1">前缀缓存块表，LRU 体系核心</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">evict_blocks()</span>
+<span class="arch-comp-desc" markdown="1">LRU 驱逐策略：最久未用优先回收</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">null_block</span>
+<span class="arch-comp-desc" markdown="1">空块占位符，填充无效槽位</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">KV Event Queue</span>
+<span class="arch-comp-desc" markdown="1">事件驱动可观测，追踪分配/释放事件</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">KVCacheMetricsCollector</span>
+<span class="arch-comp-desc" markdown="1">指标收集器：命中率、使用率、驱逐次数</span>
+</a>
+
+</div>
+</div>
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔗 上下游</div>
+<div class="arch-connections" markdown="1">
+<div class="arch-conn-up" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↑</span>
+<span class="arch-conn-label" markdown="1">由 <code>SingleTypeKVCacheManager</code> 直接操作</span>
+</div>
+<div class="arch-conn-down" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↓</span>
+<span class="arch-conn-label" markdown="1">物理块被 <code>Attention Backend</code> 读写，写入 KV 值</span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- ─── Layer 6: Model ─── -->
+<div class="arch-layer" data-layer="model" data-open="false" markdown="1">
+<button class="arch-layer-header" aria-expanded="false" markdown="1">
+<span class="arch-layer-icon" markdown="1">🚀</span>
+<span class="arch-layer-info" markdown="1">
+<span class="arch-layer-title" markdown="1">模型执行层</span>
+<span class="arch-layer-subtitle" markdown="1">ModelRunner · Attention Backend</span>
+</span>
+<span class="arch-layer-chevron" markdown="1">▸</span>
+</button>
+<div class="arch-layer-body" hidden markdown="1">
+<div class="arch-layer-body-inner" markdown="1">
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔧 组件</div>
+<div class="arch-components" markdown="1">
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">ModelRunner</span>
+<span class="arch-comp-desc" markdown="1">模型执行器：构建输入张量、执行前向传播、采样</span>
+</a>
+
+<a class="arch-component" markdown="1">
+<span class="arch-comp-name" markdown="1">Attention Backend</span>
+<span class="arch-comp-desc" markdown="1">根据 slot_mapping 将 KV 值写入对应物理块位置</span>
+</a>
+
+</div>
+</div>
+
+<div class="arch-subsection" markdown="1">
+<div class="arch-subsection-label" markdown="1">🔗 上下游</div>
+<div class="arch-connections" markdown="1">
+<div class="arch-conn-up" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↑</span>
+<span class="arch-conn-label" markdown="1">由 <code>Scheduler</code> 调用 <code>ModelRunner</code> 执行推理</span>
+</div>
+<div class="arch-conn-down" markdown="1">
+<span class="arch-conn-arrow" markdown="1">↕</span>
+<span class="arch-conn-label" markdown="1"><code>Attention Backend</code> 读写 <code>BlockPool</code> 中的物理块</span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+<!-- ═══════════════ End Architecture Explorer ═══════════════ -->
+
+</div>
+
+---
+
+<div class="arch-section" markdown="1">
 
 ## 三、前缀缓存命中查询流程
 
+<div class="arch-section-desc" markdown="1">
 新请求进入调度时，首先执行前缀缓存命中查找，尽可能复用已计算的 KV 块，避免重复计算。
+</div>
+
+<div class="arch-diagram" markdown="1">
+<div class="arch-diagram-header" markdown="1">🔍 命中查找路径 · 从 Scheduler → KVCacheCoordinator → BlockPool</div>
+<div class="arch-diagram-body" markdown="1">
 
 ```mermaid
 flowchart TD
@@ -201,28 +511,44 @@ flowchart TD
 
     HitResult --> Alloc["进入 allocate_slots()<br>分配剩余新块"]
 
-    %% 样式
     classDef startend fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20,stroke-width:2px
     classDef process fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
     classDef decision fill:#fff9c4,stroke:#f9a825,color:#f57f17
-    classDef cache fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
 
     class Start,HitResult startend
     class GetBlocks,Coord,Unitary,Hybrid,Split,Iter,EagleDrop,SingleMgr,BlockPoolLookup,HashLookup,Touch,Alloc,NoCache process
     class CheckType,Converge,EagleCheck decision
 ```
 
-### 混合组不动点迭代说明
+</div>
+</div>
+
+<details class="arch-details" markdown="1">
+<summary markdown="1">📖 混合组不动点迭代说明</summary>
+<div class="arch-details-body" markdown="1">
 对于多层混合注意力模型（部分全注意力 + 部分滑动窗口），不同组的块大小、缓存策略不同，**不动点迭代算法**保证所有组最终认可同一个命中长度：
+
 1. 初始命中长度设为最大值
 2. 依次让每个规格组校验该长度，不满足则缩短
 3. 长度单调递减，最终收敛到所有组都认可的最长公共前缀
+</div>
+</details>
+
+</div>
 
 ---
 
+<div class="arch-section" markdown="1">
+
 ## 四、KV 块分配完整流程
 
-调度器确认准入后，调用 `allocate_slots()` 完成块分配，包含前缀命中块复用 + 新块分配两阶段。
+<div class="arch-section-desc" markdown="1">
+调度器确认准入后，调用 <code>allocate_slots()</code> 完成块分配，包含前缀命中块复用 + 新块分配两阶段。
+</div>
+
+<div class="arch-diagram" markdown="1">
+<div class="arch-diagram-header" markdown="1">📦 分配流程 · 两阶段安全分配：先 touch 命中块 → 再分配新块</div>
+<div class="arch-diagram-body" markdown="1">
 
 ```mermaid
 flowchart TD
@@ -257,7 +583,6 @@ flowchart TD
     Phase2 --> BuildBlocks["构建 KVCacheBlocks 结构<br>按组组织块列表"]
     BuildBlocks --> ReturnBlocks(["返回 KVCacheBlocks + 新块数"])
 
-    %% 样式
     classDef startend fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20,stroke-width:2px
     classDef process fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
     classDef decision fill:#fff9c4,stroke:#f9a825,color:#f57f17
@@ -269,14 +594,31 @@ flowchart TD
     class Phase1,Phase2 phase
 ```
 
-### 两阶段安全分配的意义
+</div>
+</div>
+
+<details class="arch-details" markdown="1">
+<summary markdown="1">📖 两阶段安全分配的意义</summary>
+<div class="arch-details-body" markdown="1">
 跨多个缓存组时，如果一组一组地分配，前一组分配新块时可能驱逐掉后一组尚未引用的前缀命中块。**先全量 touch 所有命中块，再分配新块**，彻底避免该竞态问题。
+</div>
+</details>
+
+</div>
 
 ---
 
+<div class="arch-section" markdown="1">
+
 ## 五、块释放与驱逐流程
 
+<div class="arch-section-desc" markdown="1">
 请求完成、被抢占或滑动窗口移出时，触发块释放。释放路径分为「立即释放」与「延迟释放」两种。
+</div>
+
+<div class="arch-diagram" markdown="1">
+<div class="arch-diagram-header" markdown="1">🗑️ 释放驱逐路径 · 逆序归还 · 引用计数共享 · 延迟释放栅栏 · 分级 LRU</div>
+<div class="arch-diagram-body" markdown="1">
 
 ```mermaid
 flowchart TD
@@ -308,13 +650,11 @@ flowchart TD
     DecRef --> Done
     CacheInsert --> Done
 
-    %% 主动驱逐路径
     EvictTrigger(["分配时空间不足<br>触发主动驱逐"]) --> EvictBlocks["BlockPool.evict_blocks()"]
     EvictBlocks --> LRUSort["按 LRU 时间排序<br>最久未用优先驱逐"]
     LRUSort --> RemoveCache["从 cached 表中移除"]
     RemoveCache --> BackToQueue
 
-    %% 样式
     classDef startend fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20,stroke-width:2px
     classDef process fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
     classDef decision fill:#fff9c4,stroke:#f9a825,color:#f57f17
@@ -324,17 +664,36 @@ flowchart TD
     class WhichFree,RefCheck,EvictCheck decision
 ```
 
-### 关键设计细节
+</div>
+</div>
+
+<details class="arch-details" markdown="1">
+<summary markdown="1">📖 关键设计细节</summary>
+<div class="arch-details-body" markdown="1">
+
 1. **逆序归还**：尾部块先归还，下次分配时优先拿到尾部块，提升前缀缓存连续命中概率
 2. **引用计数共享**：同一块可被多个请求的前缀缓存共享引用，只有引用归零才真正释放
 3. **延迟释放栅栏**：多批次重叠场景下，按 `processed_step_seq` 栅栏安全释放，防止异步写入时块被重新分配
 4. **分级 LRU**：空闲块队列 + 缓存块表形成两级 LRU，缓存块被驱逐后进入空闲队列，可二次利用
 
+</div>
+</details>
+
+</div>
+
 ---
+
+<div class="arch-section" markdown="1">
 
 ## 六、推测解码（EAGLE）KV 特殊处理
 
+<div class="arch-section-desc" markdown="1">
 EAGLE 推测解码在 KV 缓存层有特殊适配，贯穿命中查找、块分配、缓存写入全链路。
+</div>
+
+<div class="arch-diagram" markdown="1">
+<div class="arch-diagram-header" markdown="1">🦅 EAGLE 全链路适配 · 四阶段特殊处理</div>
+<div class="arch-diagram-body" markdown="1">
 
 ```mermaid
 flowchart LR
@@ -356,7 +715,11 @@ flowchart LR
 
     Hit --> Alloc --> Cache --> Free
 
-    %% 样式
     classDef phase fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
     class Hit,Alloc,Cache,Free phase
 ```
+
+</div>
+</div>
+
+</div>
