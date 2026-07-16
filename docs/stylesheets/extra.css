@@ -73,6 +73,35 @@
   fill: #546e7a;
 }
 
+/* ========== Mermaid 大图横向滚动 ========== */
+/* 防止宽图被压缩，超出宽度时出现横向滚动条 */
+.mermaid {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding-bottom: 4px;
+}
+
+.mermaid svg {
+  max-width: none !important;
+  min-width: 100%;
+}
+
+/* 横向滚动条美化 */
+.mermaid::-webkit-scrollbar {
+  height: 8px;
+}
+.mermaid::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mermaid::-webkit-scrollbar-thumb {
+  background: #90a4ae;
+  border-radius: 4px;
+}
+.mermaid::-webkit-scrollbar-thumb:hover {
+  background: #607d8b;
+}
+
 /* ========== 节点内联描述（第二行文字） ========== */
 .mermaid svg g.node text tspan:not(:first-child) {
   font-size: 11px;

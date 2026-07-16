@@ -4,140 +4,170 @@
 
 ---
 
-## 一、整体分层架构图
+## 一、核心调用链路简图
 
-按调用层级从顶到底展示所有核心组件的依赖关系，**颜色标识**：
-- <span style="background:#e1f5fe;padding:2px 8px;border-radius:4px;">引擎入口层</span>
-- <span style="background:#fff3e0;padding:2px 8px;border-radius:4px;">调度决策层</span>
-- <span style="background:#e8f5e9;padding:2px 8px;border-radius:4px;">缓存协调层</span>
-- <span style="background:#e0f2f1;padding:2px 8px;border-radius:4px;">缓存管理层</span>
-- <span style="background:#fbe9e7;padding:2px 8px;border-radius:4px;">物理块池层</span>
-- <span style="background:#f3e5f5;padding:2px 8px;border-radius:4px;">模型执行层</span>
+精简展示 KV Cache 从请求进入到物理缓存的主干调用路径，快速把握六层架构。
 
 ```mermaid
 flowchart TD
-    %% ========== 引擎入口层 ==========
-    subgraph Engine["🧱 引擎入口层"]
-        direction TB
-        LLMEngine["LLMEngine<br><small>对外兼容封装</small>"]
-        EngineCore["EngineCore / EngineCoreClient<br><small>核心引擎客户端</small>"]
-        InputProc["InputProcessor<br><small>输入预处理</small>"]
-        OutputProc["OutputProcessor<br><small>输出后处理</small>"]
-    end
+    A["LLMEngine<br><small>引擎入口</small>"] --> B["EngineCore<br><small>核心引擎</small>"]
+    B --> C["Scheduler.schedule()<br><small>调度决策 + 准入控制</small>"]
 
-    %% ========== 调度决策层 ==========
-    subgraph SchedulerLayer["⚙️ 调度决策层"]
-        direction TB
-        Scheduler["Scheduler.schedule()<br><small>统一 token 预算调度</small>"]
-        WaitQueue["waiting / skipped_waiting<br><small>等待队列</small>"]
-        RunQueue["running<br><small>运行队列</small>"]
-        Preempt["_preempt_request()<br><small>抢占机制</small>"]
-        SpecDecode["推测解码支持<br><small>EAGLE / Draft / DFlash</small>"]
-        KVConnector["KVConnector<br><small>分布式 KV 传输</small>"]
-        EncCacheMgr["EncoderCacheManager<br><small>编码器缓存</small>"]
-    end
+    C --> D["KVCacheManager<br><small>统一缓存管理入口</small>"]
+    D --> E["KVCacheCoordinator<br><small>多缓存组协调</small>"]
+    E --> F["SingleTypeKVCacheManager × N<br><small>各类型缓存独立管理</small>"]
+    F --> G["BlockPool<br><small>全局物理块池<br>分配 / 释放 / 驱逐 / 前缀缓存</small>"]
 
-    %% ========== 缓存协调层 ==========
-    subgraph CoordLayer["🔀 缓存协调层"]
-        direction TB
-        CoordBase["KVCacheCoordinator (ABC)<br><small>协调器抽象基类</small>"]
-        CoordNoCache["NoPrefixCache<br><small>无前缀缓存</small>"]
-        CoordUnitary["Unitary<br><small>单缓存组</small>"]
-        CoordHybrid["Hybrid<br><small>混合多缓存组</small>"]
-        Factory["get_kv_cache_coordinator()<br><small>工厂函数</small>"]
-        SpecGroup["SpecGroup<br><small>规格分组单元</small>"]
-    end
+    C --> H["ModelRunner<br><small>模型执行</small>"]
+    G -.->|"物理块读写"| I["Attention Backend<br><small>写入 KV 缓存</small>"]
+    H --> I
 
-    %% ========== 缓存管理层 ==========
-    subgraph CacheLayer["📦 缓存管理层"]
-        direction TB
-        KVCacheMgr["KVCacheManager<br><small>统一缓存管理器</small>"]
-        KVCacheBlocks["KVCacheBlocks<br><small>缓存块数据结构</small>"]
-        SingleMgr["SingleTypeKVCacheManager × N<br><small>单类型管理器<br>(全注意力/滑动窗口/Mamba/交叉注意力)</small>"]
-        PrefixHit["find_longest_cache_hit()<br><small>前缀命中查找</small>"]
-        AllocSlots["allocate_slots()<br><small>槽位分配核心</small>"]
-        FreeBlocks["free / pop_blocks_for_free<br><small>块释放接口</small>"]
-        Retention["retention_interval<br><small>稀疏缓存保留</small>"]
-    end
+    classDef l1 fill:#e1f5fe,stroke:#0288d1,color:#01579b
+    classDef l2 fill:#fff3e0,stroke:#f57c00,color:#e65100
+    classDef l3 fill:#e0f2f1,stroke:#00897b,color:#004d40
+    classDef l4 fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    classDef l5 fill:#fbe9e7,stroke:#e64a19,color:#bf360c
+    classDef l6 fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c
 
-    %% ========== 物理块池层 ==========
-    subgraph PoolLayer["💾 物理块池层"]
-        direction TB
-        BlockPool["BlockPool<br><small>全局物理块池</small>"]
-        HashMap["BlockHashToBlockMap<br><small>哈希→块双向索引</small>"]
-        FreeQueue["FreeKVCacheBlockQueue<br><small>空闲块队列</small>"]
-        CachedBlocks["cached_block_hash_to_block<br><small>前缀缓存块表</small>"]
-        Evict["evict_blocks()<br><small>LRU 驱逐策略</small>"]
-        NullBlock["null_block<br><small>空块占位符</small>"]
-        Events["KV Event Queue<br><small>事件驱动可观测</small>"]
-        Metrics["KVCacheMetricsCollector<br><small>指标收集器</small>"]
-    end
-
-    %% ========== 模型执行层 ==========
-    subgraph ModelLayer["🚀 模型执行层"]
-        direction TB
-        ModelRunner["ModelRunner<br><small>模型执行器</small>"]
-        Attention["Attention Backend<br><small>注意力后端<br>写入物理 KV 缓存</small>"]
-    end
-
-    %% ===== 调用关系 =====
-    LLMEngine --> EngineCore
-    InputProc -.-> EngineCore
-    EngineCore --> Scheduler
-    Scheduler --> WaitQueue
-    Scheduler --> RunQueue
-    Scheduler --> Preempt
-    Scheduler --> SpecDecode
-    Scheduler --> KVConnector
-    Scheduler --> EncCacheMgr
-
-    Scheduler -->|"调用缓存分配"| KVCacheMgr
-    KVCacheMgr --> CoordBase
-    Factory -->|"创建"| CoordBase
-    CoordBase --> CoordNoCache
-    CoordBase --> CoordUnitary
-    CoordBase --> CoordHybrid
-    CoordHybrid --> SpecGroup
-
-    CoordBase --> SingleMgr
-    KVCacheMgr --> KVCacheBlocks
-    KVCacheMgr --> PrefixHit
-    KVCacheMgr --> AllocSlots
-    KVCacheMgr --> FreeBlocks
-    KVCacheMgr --> Retention
-
-    SingleMgr --> BlockPool
-    BlockPool --> HashMap
-    BlockPool --> FreeQueue
-    BlockPool --> CachedBlocks
-    BlockPool --> Evict
-    BlockPool --> NullBlock
-    BlockPool --> Events
-    BlockPool --> Metrics
-
-    Scheduler --> ModelRunner
-    ModelRunner --> Attention
-    BlockPool -.->|"物理块被读写"| Attention
-
-    %% 样式
-    classDef engine fill:#e1f5fe,stroke:#0288d1,color:#01579b
-    classDef sched fill:#fff3e0,stroke:#f57c00,color:#e65100
-    classDef coord fill:#e0f2f1,stroke:#00897b,color:#004d40
-    classDef cache fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
-    classDef pool fill:#fbe9e7,stroke:#e64a19,color:#bf360c
-    classDef model fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c
-
-    class LLMEngine,EngineCore,InputProc,OutputProc engine
-    class Scheduler,WaitQueue,RunQueue,Preempt,SpecDecode,KVConnector,EncCacheMgr sched
-    class CoordBase,CoordNoCache,CoordUnitary,CoordHybrid,Factory,SpecGroup coord
-    class KVCacheMgr,KVCacheBlocks,SingleMgr,PrefixHit,AllocSlots,FreeBlocks,Retention cache
-    class BlockPool,HashMap,FreeQueue,CachedBlocks,Evict,NullBlock,Events,Metrics pool
-    class ModelRunner,Attention model
+    class A,B l1
+    class C l2
+    class D,E l3
+    class F l4
+    class G l5
+    class H,I l6
 ```
 
 ---
 
-## 二、前缀缓存命中查询流程
+## 二、完整分层组件详图
+
+横向布局展示所有核心组件与依赖关系，**图较宽可横向滚动查看**。
+
+??? note "点击展开完整组件详图"
+    ```mermaid
+    flowchart LR
+        %% ========== 引擎入口层 ==========
+        subgraph Engine["🧱 引擎入口层"]
+            direction TB
+            LLMEngine["LLMEngine<br><small>对外兼容封装</small>"]
+            EngineCore["EngineCoreClient<br><small>核心引擎客户端</small>"]
+            InputProc["InputProcessor<br><small>输入预处理</small>"]
+            OutputProc["OutputProcessor<br><small>输出后处理</small>"]
+        end
+
+        %% ========== 调度决策层 ==========
+        subgraph SchedulerLayer["⚙️ 调度决策层"]
+            direction TB
+            Scheduler["Scheduler.schedule()<br><small>统一 token 预算调度</small>"]
+            WaitQueue["waiting / skipped_waiting<br><small>等待队列</small>"]
+            RunQueue["running<br><small>运行队列</small>"]
+            Preempt["_preempt_request()<br><small>抢占机制</small>"]
+            SpecDecode["推测解码支持<br><small>EAGLE / Draft / DFlash</small>"]
+            KVConnector["KVConnector<br><small>分布式 KV 传输</small>"]
+            EncCacheMgr["EncoderCacheManager<br><small>编码器缓存</small>"]
+        end
+
+        %% ========== 缓存协调层 ==========
+        subgraph CoordLayer["🔀 缓存协调层"]
+            direction TB
+            CoordBase["KVCacheCoordinator (ABC)<br><small>协调器抽象基类</small>"]
+            CoordNoCache["NoPrefixCache<br><small>无前缀缓存</small>"]
+            CoordUnitary["Unitary<br><small>单缓存组</small>"]
+            CoordHybrid["Hybrid<br><small>混合多缓存组</small>"]
+            Factory["get_kv_cache_coordinator()<br><small>工厂函数</small>"]
+            SpecGroup["SpecGroup<br><small>规格分组单元</small>"]
+        end
+
+        %% ========== 缓存管理层 ==========
+        subgraph CacheLayer["📦 缓存管理层"]
+            direction TB
+            KVCacheMgr["KVCacheManager<br><small>统一缓存管理器</small>"]
+            KVCacheBlocks["KVCacheBlocks<br><small>缓存块数据结构</small>"]
+            SingleMgr["SingleTypeKVCacheManager × N<br><small>全注意力 / 滑动窗口<br>Mamba / 交叉注意力</small>"]
+            PrefixHit["find_longest_cache_hit()<br><small>前缀命中查找</small>"]
+            AllocSlots["allocate_slots()<br><small>槽位分配核心</small>"]
+            FreeBlocks["free / pop_blocks_for_free<br><small>块释放接口</small>"]
+            Retention["retention_interval<br><small>稀疏缓存保留</small>"]
+        end
+
+        %% ========== 物理块池层 ==========
+        subgraph PoolLayer["💾 物理块池层"]
+            direction TB
+            BlockPool["BlockPool<br><small>全局物理块池</small>"]
+            HashMap["BlockHashToBlockMap<br><small>哈希→块双向索引</small>"]
+            FreeQueue["FreeKVCacheBlockQueue<br><small>空闲块队列</small>"]
+            CachedBlocks["cached_block_hash_to_block<br><small>前缀缓存块表</small>"]
+            Evict["evict_blocks()<br><small>LRU 驱逐策略</small>"]
+            NullBlock["null_block<br><small>空块占位符</small>"]
+            Events["KV Event Queue<br><small>事件驱动可观测</small>"]
+            Metrics["KVCacheMetricsCollector<br><small>指标收集器</small>"]
+        end
+
+        %% ========== 模型执行层 ==========
+        subgraph ModelLayer["🚀 模型执行层"]
+            direction TB
+            ModelRunner["ModelRunner<br><small>模型执行器</small>"]
+            Attention["Attention Backend<br><small>写入物理 KV 缓存</small>"]
+        end
+
+        %% ===== 调用关系 =====
+        LLMEngine --> EngineCore
+        InputProc -.-> EngineCore
+        EngineCore --> Scheduler
+        Scheduler --> WaitQueue
+        Scheduler --> RunQueue
+        Scheduler --> Preempt
+        Scheduler --> SpecDecode
+        Scheduler --> KVConnector
+        Scheduler --> EncCacheMgr
+
+        Scheduler -->|"调用缓存分配"| KVCacheMgr
+        KVCacheMgr --> CoordBase
+        Factory -->|"创建"| CoordBase
+        CoordBase --> CoordNoCache
+        CoordBase --> CoordUnitary
+        CoordBase --> CoordHybrid
+        CoordHybrid --> SpecGroup
+
+        CoordBase --> SingleMgr
+        KVCacheMgr --> KVCacheBlocks
+        KVCacheMgr --> PrefixHit
+        KVCacheMgr --> AllocSlots
+        KVCacheMgr --> FreeBlocks
+        KVCacheMgr --> Retention
+
+        SingleMgr --> BlockPool
+        BlockPool --> HashMap
+        BlockPool --> FreeQueue
+        BlockPool --> CachedBlocks
+        BlockPool --> Evict
+        BlockPool --> NullBlock
+        BlockPool --> Events
+        BlockPool --> Metrics
+
+        Scheduler --> ModelRunner
+        ModelRunner --> Attention
+        BlockPool -.->|"物理块被读写"| Attention
+
+        %% 样式
+        classDef engine fill:#e1f5fe,stroke:#0288d1,color:#01579b
+        classDef sched fill:#fff3e0,stroke:#f57c00,color:#e65100
+        classDef coord fill:#e0f2f1,stroke:#00897b,color:#004d40
+        classDef cache fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+        classDef pool fill:#fbe9e7,stroke:#e64a19,color:#bf360c
+        classDef model fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c
+
+        class LLMEngine,EngineCore,InputProc,OutputProc engine
+        class Scheduler,WaitQueue,RunQueue,Preempt,SpecDecode,KVConnector,EncCacheMgr sched
+        class CoordBase,CoordNoCache,CoordUnitary,CoordHybrid,Factory,SpecGroup coord
+        class KVCacheMgr,KVCacheBlocks,SingleMgr,PrefixHit,AllocSlots,FreeBlocks,Retention cache
+        class BlockPool,HashMap,FreeQueue,CachedBlocks,Evict,NullBlock,Events,Metrics pool
+        class ModelRunner,Attention model
+    ```
+
+---
+
+## 三、前缀缓存命中查询流程
 
 新请求进入调度时，首先执行前缀缓存命中查找，尽可能复用已计算的 KV 块，避免重复计算。
 
@@ -190,7 +220,7 @@ flowchart TD
 
 ---
 
-## 三、KV 块分配完整流程
+## 四、KV 块分配完整流程
 
 调度器确认准入后，调用 `allocate_slots()` 完成块分配，包含前缀命中块复用 + 新块分配两阶段。
 
@@ -244,7 +274,7 @@ flowchart TD
 
 ---
 
-## 四、块释放与驱逐流程
+## 五、块释放与驱逐流程
 
 请求完成、被抢占或滑动窗口移出时，触发块释放。释放路径分为「立即释放」与「延迟释放」两种。
 
@@ -302,7 +332,7 @@ flowchart TD
 
 ---
 
-## 五、推测解码（EAGLE）KV 特殊处理
+## 六、推测解码（EAGLE）KV 特殊处理
 
 EAGLE 推测解码在 KV 缓存层有特殊适配，贯穿命中查找、块分配、缓存写入全链路。
 
