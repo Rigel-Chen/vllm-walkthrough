@@ -3,7 +3,6 @@
 [![文档](https://img.shields.io/badge/📖-在线文档-1976d2?style=for-the-badge&logo=materialformkdocs)](https://rigel-chen.github.io/vllm-walkthrough/)
 [![vLLM](https://img.shields.io/badge/vLLM-v1-ff6f00?style=for-the-badge&logo=v)](https://github.com/vllm-project/vllm)
 [![MkDocs](https://img.shields.io/badge/MkDocs-Material-526cfe?style=for-the-badge&logo=materialformkdocs)](https://squidfunk.github.io/mkdocs-material/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 > vLLM KV Cache 调度中枢的完整走读文档——从引擎入口到物理块池的六层架构全景。
 
@@ -100,11 +99,6 @@ mkdocs build
 - 📝 **补充分析**：对某个函数或流程有更深入的理解？提交 PR 补充到对应的 API 文档
 - 🔗 **修正链接**：流程图中的组件卡片链接到错误的章节？帮助修正
 
----
-
-## 📄 许可证
-
-MIT License
 
 ---
 
