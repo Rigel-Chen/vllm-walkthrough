@@ -387,3 +387,103 @@ a.fc-card:hover .fc-card-name { color: var(--md-primary-fg-color, #3f51b5); }
   .fc-branch::before { display: none; }
   .fc-branch-col { flex-direction: row; gap: 8px; }
 }
+
+
+/* ============================================================
+   9. Index Page
+   ============================================================ */
+.idx-hero {
+  padding: 20px 0 10px;
+}
+
+/* Layer preview cards */
+.idx-layers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin: 6px 0 0;
+}
+
+.idx-layer {
+  border-radius: var(--fc-radius);
+  border: 1.5px solid var(--fc-border);
+  overflow: hidden;
+  transition: box-shadow var(--fc-ease);
+  background: var(--fc-card-bg);
+}
+
+.idx-layer:hover {
+  box-shadow: var(--fc-shadow-hover);
+}
+
+.idx-layer-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.idx-layer[data-layer="engine"] .idx-layer-head      { background: var(--fc-engine-bg); }
+.idx-layer[data-layer="scheduler"] .idx-layer-head   { background: var(--fc-sched-bg); }
+.idx-layer[data-layer="coordinator"] .idx-layer-head { background: var(--fc-coord-bg); }
+.idx-layer[data-layer="cache"] .idx-layer-head       { background: var(--fc-cache-bg); }
+.idx-layer[data-layer="pool"] .idx-layer-head        { background: var(--fc-pool-bg); }
+.idx-layer[data-layer="model"] .idx-layer-head       { background: var(--fc-model-bg); }
+
+.idx-layer-icon { font-size: 1.2rem; }
+.idx-layer-name { color: var(--md-default-fg-color, #222); }
+
+.idx-layer-body {
+  padding: 10px 16px;
+  font-size: 0.78rem;
+  color: var(--fc-muted);
+  line-height: 1.5;
+}
+
+/* Stats row */
+.idx-stats {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin: 4px 0 0;
+}
+
+.idx-stat {
+  text-align: center;
+  padding: 12px 20px;
+}
+
+.idx-stat-num {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #1976d2, #7b1fa2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.idx-stat-label {
+  font-size: 0.78rem;
+  color: var(--fc-muted);
+  margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  .idx-layers {
+    grid-template-columns: 1fr;
+  }
+  .idx-stats {
+    gap: 12px;
+  }
+  .idx-stat {
+    padding: 8px 14px;
+  }
+  .idx-stat-num {
+    font-size: 1.5rem;
+  }
+}
