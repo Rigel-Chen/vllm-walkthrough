@@ -18,6 +18,14 @@
   --fc-pool-accent:   #e64a19;
   --fc-model-accent:  #7b1fa2;
 
+  /* Layer header backgrounds (used by index page .idx-layer) */
+  --fc-engine-bg: rgba(25, 118, 210, 0.07);
+  --fc-sched-bg:  rgba(245, 124, 0, 0.07);
+  --fc-coord-bg:  rgba(0, 137, 123, 0.07);
+  --fc-cache-bg:  rgba(56, 142, 60, 0.07);
+  --fc-pool-bg:   rgba(230, 74, 25, 0.07);
+  --fc-model-bg:  rgba(123, 31, 162, 0.07);
+
   --fc-arrow:    #b0bec5;
   --fc-muted:    #64748b;
   --fc-card-bg:  #fafbfc;
@@ -38,6 +46,14 @@
   --fc-muted:   #8899aa;
   --fc-card-bg: #1a1f2b;
   --fc-border:  #2d3548;
+
+  /* Layer header backgrounds — darker for dark theme */
+  --fc-engine-bg: rgba(25, 118, 210, 0.14);
+  --fc-sched-bg:  rgba(245, 124, 0, 0.14);
+  --fc-coord-bg:  rgba(0, 137, 123, 0.14);
+  --fc-cache-bg:  rgba(56, 142, 60, 0.14);
+  --fc-pool-bg:   rgba(230, 74, 25, 0.14);
+  --fc-model-bg:  rgba(123, 31, 162, 0.14);
 }
 
 
@@ -79,8 +95,9 @@
   cursor: default;
   transition: all var(--fc-ease);
   min-width: 150px;
-  max-width: 280px;
-  scroll-margin-top: 80px;
+  max-width: 320px;
+  scroll-margin-top: calc(var(--md-header-height, 48px) + 32px);
+  word-break: break-word;
 }
 
 a.fc-card { cursor: pointer; }
@@ -106,17 +123,17 @@ a.fc-card:hover .fc-card-name { color: var(--md-primary-fg-color, #3f51b5); }
 }
 
 /* Per-layer left border */
-.fc-card[data-layer="engine"]      { border-left: 3px solid var(--fc-engine-accent); }
+.fc-card[data-layer="engine"]      { border-left: 4px solid var(--fc-engine-accent); }
 .fc-card[data-layer="engine"]:hover{ border-color: var(--fc-engine-accent); }
-.fc-card[data-layer="scheduler"]   { border-left: 3px solid var(--fc-sched-accent); }
+.fc-card[data-layer="scheduler"]   { border-left: 4px solid var(--fc-sched-accent); }
 .fc-card[data-layer="scheduler"]:hover{ border-color: var(--fc-sched-accent); }
-.fc-card[data-layer="coordinator"] { border-left: 3px solid var(--fc-coord-accent); }
+.fc-card[data-layer="coordinator"] { border-left: 4px solid var(--fc-coord-accent); }
 .fc-card[data-layer="coordinator"]:hover{ border-color: var(--fc-coord-accent); }
-.fc-card[data-layer="cache"]       { border-left: 3px solid var(--fc-cache-accent); }
+.fc-card[data-layer="cache"]       { border-left: 4px solid var(--fc-cache-accent); }
 .fc-card[data-layer="cache"]:hover { border-color: var(--fc-cache-accent); }
-.fc-card[data-layer="pool"]        { border-left: 3px solid var(--fc-pool-accent); }
+.fc-card[data-layer="pool"]        { border-left: 4px solid var(--fc-pool-accent); }
 .fc-card[data-layer="pool"]:hover  { border-color: var(--fc-pool-accent); }
-.fc-card[data-layer="model"]       { border-left: 3px solid var(--fc-model-accent); }
+.fc-card[data-layer="model"]       { border-left: 4px solid var(--fc-model-accent); }
 .fc-card[data-layer="model"]:hover { border-color: var(--fc-model-accent); }
 
 /* Active (scroll spy) */
@@ -126,7 +143,7 @@ a.fc-card:hover .fc-card-name { color: var(--md-primary-fg-color, #3f51b5); }
 }
 
 /* Compact variant */
-.fc-card-sm { padding: 8px 12px; min-width: 120px; max-width: 200px; }
+.fc-card-sm { padding: 8px 12px; min-width: 120px; max-width: 240px; word-break: break-word; }
 .fc-card-sm .fc-card-name { font-size: 0.76rem; }
 .fc-card-sm .fc-card-desc { font-size: 0.66rem; }
 
@@ -209,7 +226,8 @@ a.fc-card:hover .fc-card-name { color: var(--md-primary-fg-color, #3f51b5); }
 }
 
 /* Arrow + label combo (replaces fc-arr-group) */
-.fc-step {
+.fc-step,
+.fc-arr-group {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -217,7 +235,8 @@ a.fc-card:hover .fc-card-name { color: var(--md-primary-fg-color, #3f51b5); }
   padding: 2px 0;
 }
 
-.fc-step-label {
+.fc-step-label,
+.fc-arr-label {
   font-size: 0.74rem;
   color: var(--fc-muted);
   text-align: center;
@@ -225,7 +244,8 @@ a.fc-card:hover .fc-card-name { color: var(--md-primary-fg-color, #3f51b5); }
   max-width: 400px;
   padding: 0 8px;
 }
-.fc-step-label code {
+.fc-step-label code,
+.fc-arr-label code {
   font-size: 0.88em;
   padding: 1px 4px;
   border-radius: 3px;
@@ -377,7 +397,7 @@ a.fc-card:hover .fc-card-name { color: var(--md-primary-fg-color, #3f51b5); }
   .fc-split-col { min-width: 180px; }
   .fc-branch { gap: 10px; }
   .fc-branch::before { left: 10%; right: 10%; }
-  .fc-step-label { font-size: 0.7rem; }
+  .fc-step-label, .fc-arr-label { font-size: 0.7rem; }
 }
 
 @media (max-width: 480px) {

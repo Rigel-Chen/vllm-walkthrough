@@ -8,7 +8,7 @@ hide:
 <div class="idx-hero" markdown="1">
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/vllm-project/vllm/main/docs/assets/logos/vllm-logo-text-light.png" width="260" alt="vLLM" />
+  <img src="assets/vllm-logo-text-light.png" width="260" alt="vLLM" onerror="this.src='https://raw.githubusercontent.com/vllm-project/vllm/main/docs/assets/logos/vllm-logo-text-light.png'" />
 </p>
 
 <h1 align="center" style="font-weight: 800; margin: 8px 0 0; font-size: 2.2rem; letter-spacing: -0.02em;">
