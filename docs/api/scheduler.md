@@ -219,8 +219,8 @@ def _handle_stopped_request(self, request: Request) -> bool:
 def update_from_output(
     self,
     scheduler_output: SchedulerOutput,
-    output: EngineCoreOutput,
-) -> EngineCoreOutput:
+    model_runner_output: ModelRunnerOutput,
+) -> dict[int, EngineCoreOutputs]:
     """根据模型执行输出更新请求状态"""
 ```
 
@@ -231,7 +231,7 @@ def update_from_output(
 | `add_request(request)` | 接收新请求 | 注册到全局表，加入等待队列，初始化 KV 相关状态 |
 | `finish_requests(request_ids, reason)` | 批量完成请求 | 标记状态、释放资源、记录完成 ID |
 | `_free_request(request)` | 彻底清理请求 | 释放 KV 块、编码器缓存、从请求表移除 |
-| `update_from_output(scheduler_output, output)` | 步进更新 | 更新每个请求的已计算 token 数、输出 token、推测解码状态，检测停止条件 |
+| `update_from_output(scheduler_output, model_runner_output)` | 步进更新 | 更新每个请求的已计算 token 数、输出 token、推测解码状态，检测停止条件；返回以 engine_index 为键的输出字典 |
 | `get_request_counts()` | 获取统计 | 返回 `(等待请求数, 运行请求数)` |
 | `get_num_unfinished_requests()` | 未完成总数 | 等待 + 运行 + 流式输入等待 |
 | `has_unfinished_requests()` | 是否有未完成请求 | 布尔判断 |
@@ -277,8 +277,8 @@ def update_draft_token_ids(self, draft_token_ids: DraftTokenIds) -> None:
 def update_draft_token_ids_in_output(
     self,
     scheduler_output: SchedulerOutput,
-    output: EngineCoreOutput,
-) -> EngineCoreOutput:
+    model_runner_output: ModelRunnerOutput,
+) -> dict[int, EngineCoreOutputs]:
     """将草稿 token 写入输出，供验证阶段使用"""
 ```
 

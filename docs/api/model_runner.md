@@ -26,7 +26,7 @@
 
 ## AttentionBackend {#attention-backend}
 
-`AttentionBackend`（定义于 `vllm/v1/attention/backends/`）是 KV Cache 物理读写的**最终执行者**。
+`AttentionBackend`（抽象基类定义于 `vllm/v1/attention/backend.py`，具体实现在 `vllm/v1/attention/backends/`）是 KV Cache 物理读写的**最终执行者**。
 
 ### 核心接口
 
@@ -59,10 +59,10 @@ vLLM 支持多种 Attention 后端，按硬件和特性自动选择：
 |------|---------|---------|
 | FlashAttention | NVIDIA GPU (通用) | 高性能 fused kernel，支持 PagedAttention |
 | FlashInfer | NVIDIA GPU | 更优的 decode 性能，支持 KV 量化 |
-| xFormers | NVIDIA GPU | 兼容性最佳的 fallback |
+| Triton | NVIDIA GPU | 高性能 Triton kernel 实现，v1 默认 fallback |
 | ROCm (AMD) | AMD GPU | AMD 平台适配 |
 | GDN | Intel Gaudi | Intel 加速器支持 |
 
 ### `NULL_BLOCK_ID`
 
-所有后端共享的约定：`NULL_BLOCK_ID = -1`，表示未分配的槽位。Attention 计算时会跳过这些位置。
+所有后端共享的约定：`NULL_BLOCK_ID = 0`（定义于 `vllm/v1/attention/backends/utils.py`），表示未分配的槽位。Attention 计算时会跳过这些位置。

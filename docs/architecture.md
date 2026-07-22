@@ -230,7 +230,7 @@
 <div class="fc-row" markdown="1">
 <a href="../api/kv_cache_coordinator/" class="fc-card" data-layer="coordinator" markdown="1">
 <span class="fc-card-name">KVCacheCoordinator (ABC)</span>
-<span class="fc-card-desc">抽象基类，定义 find_longest_cache_hit / allocate / free 统一接口</span>
+<span class="fc-card-desc">抽象基类（ABC），定义 find_longest_cache_hit 等统一接口，由工厂函数自动选择实现</span>
 </a>
 </div>
 
