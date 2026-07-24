@@ -136,6 +136,14 @@ GPUModelRunner · Attention Backend · block_table / slot_mapping
 
 <div class="grid cards" markdown>
 
+-   :material-play-circle:{ .lg .middle } &nbsp; __前缀缓存命中演示__
+
+    ---
+
+    🎬 基于真实 trace 数据的逐步动画演示：4 个请求共享前缀，观察 BlockPool 中缓存块的分配、命中、共享引用和释放全过程。
+
+    [:octicons-arrow-right-24: 开始演示](demo/)
+
 -   :material-source-branch:{ .lg .middle } &nbsp; __调用结构树__
 
     ---

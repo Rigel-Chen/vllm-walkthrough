@@ -64,6 +64,7 @@ plugins:
 nav:
   - 首页: index.md
   - 调用结构树: architecture.md
+  - 🎬 前缀缓存命中演示: demo.md
   - API 文档:
       - BlockPool: api/block_pool.md
       - KVCacheManager: api/kv_cache_manager.md
